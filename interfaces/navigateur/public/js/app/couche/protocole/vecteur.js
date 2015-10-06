@@ -167,23 +167,6 @@ define(['couche', 'occurence', 'limites', 'style', 'aide'], function(Couche, Occ
     };
     
     /** 
-    * Obtenir la liste des occurences pas sélectionnées.
-    * @method 
-    * @name Couche.Vecteur#obtenirOccurencesNonSelectionnees
-    * @returns {Tableau} Tableau de {@link Occurence}
-    */
-    Vecteur.prototype.obtenirOccurencesNonSelectionnees = function() { 
-        var occurences=[];
-        $.each(this.obtenirOccurences(), function(key, value){
-            if(!value.selectionnee){
-                occurences.push(value);
-            };
-        });
-        return occurences;
-    };
-    
-    
-    /** 
     * Obtenir l'occurence ayant l'id entré en paramètre.
     * @method 
     * @name Couche.Vecteur#obtenirOccurenceParId
@@ -271,6 +254,7 @@ define(['couche', 'occurence', 'limites', 'style', 'aide'], function(Couche, Occ
         var occurences = this.obtenirOccurences();
         this.definirRafraichissementPermis('debut', occurences);
         var that=this;
+        
         //todo: throw error si trop occurences... 
           $.each(occurences, function(key, value){
             if(!opt.exceptions || $.inArray(value, opt.exceptions) === -1){
@@ -485,19 +469,47 @@ define(['couche', 'occurence', 'limites', 'style', 'aide'], function(Couche, Occ
     };
     
 
-    Vecteur.prototype.cacherOccurence = function(occurence,tousLesStyles) { 
-        if(!occurence || occurence.vecteur !== this){return false};
+    Vecteur.prototype.cacherOccurence = function(occurence) { 
+        if(Array.isArray(occurence)){
+            $.each(occurence, function(index, value){
+                value.cacher();
+            })
+        }else{
+            if(!occurence || occurence.vecteur !== this){return false};
+            occurence.cacher();
+        }
+    };
+    
+    Vecteur.prototype.cacherTout = function(tousLesStyles) { 
         
-        var tousStyles = tousLesStyles===undefined?false:tousLesStyles;
-             
-        occurence.cacher(tousStyles);
+        var tousLesStyles = typeof tousLesStyles === "undefined"?undefined:tousLesStyles;
+        
+        $.each(this.listeOccurences, function(index, value){
+            value.cacher(tousLesStyles);
+        })
+       
     };
 
     Vecteur.prototype.afficherOccurence = function(occurence) { 
-        if(!occurence || occurence.vecteur !== this){return false};
-        occurence.afficher();
+        if(Array.isArray(occurence)){
+            $.each(occurence, function(index, value){
+                value.afficher();
+            })
+        }else{
+            if(!occurence || occurence.vecteur !== this){return false};
+            occurence.afficher();
+        }
     };
-    
+        
+    Vecteur.prototype.afficherTout = function(tousLesStyles) { 
+        
+        var tousLesStyles = typeof tousLesStyles === "undefined"?undefined:tousLesStyles;
+               
+        $.each(this.listeOccurences, function(index, value){
+            value.afficher(tousLesStyles);
+        })
+       
+    };
     /** 
      * Obtenir l'emprise de toutes les occurences de la couche
      * @method 
@@ -662,8 +674,9 @@ define(['couche', 'occurence', 'limites', 'style', 'aide'], function(Couche, Occ
             }
             this._layer.drawFeature(occurence._feature);
             this.rafraichirLegende();
+            return true;
         }
-        
+       
     };
     
     Vecteur.prototype.rafraichirLegende = function() {
@@ -840,57 +853,6 @@ define(['couche', 'occurence', 'limites', 'style', 'aide'], function(Couche, Occ
         }
         //that._.declencher({ type: "occurenceClique", occurence: e.occurence }); 
     };
-    
-    
-    Vecteur.prototype.afficherSelectionSeulement = function(){
-        
-        var selection = this.obtenirOccurencesNonSelectionnees();
-        this.definirRafraichissementPermis('debut', selection);
-        $.each(selection, function(key, occurence){
-                occurence.cacher(true);
-        });
-        selection = this.obtenirOccurencesSelectionnees();
-        $.each(selection, function(key, occurence){
-                occurence.afficher(true);
-        });
-        this.definirRafraichissementPermis('fin');
-    }
-    
-    Vecteur.prototype.cacherTous = function(){
-        
-        var selection = this.obtenirOccurences();
-        this.definirRafraichissementPermis('debut', selection);
-        $.each(selection, function(key, occurence){
-                occurence.cacher(true);
-        });
-        this.definirRafraichissementPermis('fin');
-    }
-    
-     Vecteur.prototype.afficherTous = function(){
-        
-        var selection = this.obtenirOccurences();
-        this.definirRafraichissementPermis('debut', selection);
-        $.each(selection, function(key, occurence){
-                occurence.afficher(true);
-        });
-        this.definirRafraichissementPermis('fin');
-    }
-    
-    Vecteur.prototype.definirRafraichissementPermis = function (tag, occurence){
-        switch(tag){
-            case 'debut':
-                if(occurence.length > this.options.rafraichirMaxOccurence){
-                    this.options.rafraichissementPermis = false;
-                }
-                break;
-            case 'fin':
-                if(!this.options.rafraichissementPermis){
-                    this.options.rafraichissementPermis = true;
-                }
-                this.rafraichir();
-                break;
-        }
-    }
     
   /*  Vecteur.Controles.prototype.activerClique = function() {   
         this._.carte.ajouterDeclencheur('occurenceClique', this._clique, {scope: this});

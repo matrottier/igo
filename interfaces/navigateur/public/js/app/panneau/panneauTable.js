@@ -1,9 +1,20 @@
-define(['panneau', 'aide', 'contexteMenuTable', 'barreOutils', 'outilTableSelection', 'outil', 'outilMenu', 'outilDessin', 'outilEdition', 'outilControleMenu', 'libs/extension/Extjs/JsonReader'], function(Panneau, Aide, ContexteMenuTable, BarreOutils, OutilTableSelection, Outil, OutilMenu, OutilDessin, OutilEdition, OutilControleMenu) {
+/*if(!require.estDansConfig("pagingStore")){   
+    require.ajouterConfig({
+        paths: {
+            pagingStore: 'libs/Ext.ux/PagingStore/PagingStore'
+        }
+    });
+}*/
+
+define(['panneau', 'aide', 'contexteMenuTable', 'barreOutils', 'outilTableSelection', 'outil', 'outilMenu', 'outilDessin', 'outilEdition', 'outilControleMenu', 'libs/Ext.ux/PagingStore/PagingStore','libs/extension/Extjs/JsonReader'], function(Panneau, Aide, ContexteMenuTable, BarreOutils, OutilTableSelection, Outil, OutilMenu, OutilDessin, OutilEdition, OutilControleMenu) {
 
     function PanneauTable(options) {
         this.options = options || {};
         this.defautOptions = $.extend({}, this.defautOptions, {
-            id: 'table-panneau'
+            id: 'table-panneau',
+            paginer : false,
+            paginer_debut:0,
+            paginer_limite:50
         });   
     };
     
@@ -12,35 +23,41 @@ define(['panneau', 'aide', 'contexteMenuTable', 'barreOutils', 'outilTableSelect
     
     PanneauTable.prototype._init = function() {
         Ext.QuickTips.init();
-        
-        this.controles = new PanneauTable.Controles(this);
-        this.template = this.options.template || {colonnes: []};
-        this.donnees = this.options.donnees || [];
-        var config = this.configurer(this.template, this.donnees);
-
-        this._extOptions = {
-            xtype: 'editorgrid',
-            store: config.store,
-            colModel:  config.columnModel,
-            stripeRows: true,
-            stateful: true,
-            stateId: 'grid'+this.options.titre,
-            clicksToEdit: 1,
-            width:screen.width, // corrige le bug dernière colonne width (vue module d'édition)
-            viewConfig: {
-              forceFit: true
-            },
-            sm: new Ext.grid.RowSelectionModel(),
-            tbar: this._obtenirToolbar()
-
-        };
-
-        Panneau.prototype._init.call(this);
-        this._initEvent();
-        this.barreOutils._setPanelContainer(this._panel);
-        if(this.options.vecteur){
-            this.ouvrirTableVecteur();
-        }
+                
+            var that =this;
+            this.controles = new PanneauTable.Controles(this);
+            this.template = this.options.template || {colonnes: []};
+            this.donnees = this.options.donnees || [];                    
+            var config = this.configurer(this.template, this.donnees); 
+            
+            this._extOptions = {
+                    xtype: 'editorgrid',
+                    store: config.store,
+                    colModel:  config.columnModel,
+                    stripeRows: true,
+                    stateful: true,
+                    stateId: 'grid'+this.options.titre,
+                    clicksToEdit: 1,
+                    width:screen.width, // corrige le bug dernière colonne width (vue module d'édition)
+                    viewConfig: {
+                      forceFit: true
+                    },
+                    sm: new Ext.grid.RowSelectionModel(),
+                    tbar: this._obtenirToolbar(),
+                    bbar: this._obtenirPaginationBarre(config),
+                    listeners:{
+                        reconfigure: function(ceci , store, colModel){
+                            that.reconfigurerPaginationBarre(store);
+                        }                           
+                    }
+                };
+                   
+                Panneau.prototype._init.call(this);
+                this._initEvent();
+                this.barreOutils._setPanelContainer(this._panel);
+                if(this.options.vecteur){
+                    this.ouvrirTableVecteur();
+                }                    
     };
     
   
@@ -67,6 +84,21 @@ define(['panneau', 'aide', 'contexteMenuTable', 'barreOutils', 'outilTableSelect
         return this.barreOutils._getToolbar();
     };
     
+    PanneauTable.prototype._obtenirPaginationBarre = function(config){
+        if(this.options.paginer){
+            return new Ext.PagingToolbar({
+                        pageSize: config.store.lastOptions.params.limit,
+                        store: config.store,
+                        displayInfo: true,
+                        displayMsg: 'Affiche les occurences {0} à {1} de {2}',
+                        emptyMsg: "Aucune occurence"
+                    });
+        }
+        else{
+            return null;
+        }
+       
+    };
     
     PanneauTable.prototype.chargerDonnees = function(donnees, garderDonnees){
         var that=this;
@@ -345,13 +377,32 @@ define(['panneau', 'aide', 'contexteMenuTable', 'barreOutils', 'outilTableSelect
            });
             columnModel.push(that._obtenirColumnModel(value));
         });
-
-        var store = new Ext.data.JsonStore({
+        
+        var debut = this.options.paginer_debut?parseInt(this.options.paginer_debut):this.defautOptions.paginer_debut;
+        var limite = this.options.paginer_limite?parseInt(this.options.paginer_limite):this.defautOptions.paginer_limite;
+        
+        var store = new Ext.ux.data.PagingJsonStore({
+            fields:fields,
             root: this.template.base,
-            fields: fields
-        });  
-
-
+            lastOptions: {'params':{'start':debut,'limit':limite}},
+            listeners : {
+                //Lors d'un changement de page. Nous devons executer chaque checkbox de la liste
+                datachanged: function(pagingJsonStore){ 
+                    if(that.donnees.listeOccurences){
+                        that.donnees.deselectionnerTout();
+                    }
+                    
+                    if(that.barreOutils){
+                        $.each(that.barreOutils.obtenirOutilsParType("OutilTableSelection",3), function(index , value){
+                            if(typeof value._bouton.isXType === "function" && value._bouton.isXType("menucheckitem")){
+                                value.executer(true);
+                            }
+                        });
+                    }
+                }
+            }
+        });
+               
         try {
             store.loadData(that.donnees);
         } catch(e){
@@ -372,6 +423,14 @@ define(['panneau', 'aide', 'contexteMenuTable', 'barreOutils', 'outilTableSelect
         return {columnModel: new Ext.grid.ColumnModel(columnModel), store: store};
     };
     
+    PanneauTable.prototype.reconfigurerPaginationBarre = function(store){
+        if(this.options.paginer && this._panel){
+            var paginationBarre = this._panel.getBottomToolbar();
+            if(paginationBarre){
+                paginationBarre.bind(store);
+            }
+        }
+    };
     
     PanneauTable.prototype.reconfigurerBarreOutils = function(){
         var that=this;
@@ -450,15 +509,31 @@ define(['panneau', 'aide', 'contexteMenuTable', 'barreOutils', 'outilTableSelect
             outilsSelection.push(new OutilTableSelection({
                 type:'zoom',    
                 couche: this.donnees}));
+            
+            var selectionnerAuto = typeof this.options.outils_auto ? this.options.outils_auto:false;
              outilsSelection.push(new OutilTableSelection({
                 type:'auto',
-                couche: this.donnees}));
-             outilsSelection.push(new OutilTableSelection({
+                couche: this.donnees,
+                _extOptions:{checked:selectionnerAuto}}));          
+            
+			 outilsSelection.push(new OutilTableSelection({
                 type:'selectionSeulement',
                 couche: this.donnees}));
 
 
+            var selectionnerContenuPage = typeof this.options.outils_contenupage ? this.options.outils_contenupage:false;
+            if(this.options.paginer){
+                outilsSelection.push(new OutilTableSelection({
+                    type:'contenupage',
+                    couche: this.donnees,
+                    panneauTable: this,
+                    _extOptions:{checked:selectionnerContenuPage}}));
+            }
+            
+           
             menuSelection.ajouterOutils(outilsSelection);  
+            if(selectionnerContenuPage)outilsSelection[outilsSelection.length-1].executer(true);
+            if(selectionnerAuto)outilsSelection[outilsSelection.length-1].executer(true);
         }
     };
     
@@ -553,10 +628,13 @@ define(['panneau', 'aide', 'contexteMenuTable', 'barreOutils', 'outilTableSelect
         var that=this;
         $.each(occurences, function(key, value){
             if(!that._panel.store){return false;}
-            if(value){
-                var index = that._panel.store.indexOfId(value.id);
+            var index = that._panel.store.indexOfId(value.id);
+            if(index === -1){
+                if(value.selectionnee){
+                    value.deselectionner();
+                }
+                return true;
             }
-            if(index === -1){return true;}
             that.selectionnerParIndex(index, true);
         });
     };
@@ -566,7 +644,9 @@ define(['panneau', 'aide', 'contexteMenuTable', 'barreOutils', 'outilTableSelect
         $.each(occurences, function(key, value){
             if(!that._panel.store){return false;}
             var index = that._panel.store.indexOfId(value.id);
-            if(index === -1){return true;}
+            if(index === -1){
+                return true;
+            }
             that.deselectionnerParIndex(index);
         });
     };
@@ -731,6 +811,20 @@ define(['panneau', 'aide', 'contexteMenuTable', 'barreOutils', 'outilTableSelect
       
       this.afficherErreurs();     
     };
+    
+    PanneauTable.prototype.obtenirOccurences = function(){
+        var that = this;
+        var listeOccurences = Array();
+        $.each(this.donnees.obtenirOccurences(), function(index, value){
+            if(!that._panel.store){return false;}
+            var index = that._panel.store.indexOfId(value.id);
+            if(index !== -1){
+               listeOccurences.push(value);
+            }
+        });
+        return listeOccurences;
+    };
+    
     
     PanneauTable.Controles = function(_){
         this._ = _;
