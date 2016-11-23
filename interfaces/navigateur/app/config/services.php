@@ -304,22 +304,12 @@ $di->set('router', function(){
 
             if (isset ($config->application->authentification->module)) {
 
-                $moduleAuthMultiple = false;
                 $authentificationModules = array ();
                 $configKey =  $di->get('dispatcher')->getParam("configuration");
 
                 //On as mis la configuration XML dans la session alors on la prend
                 if(isset ($di->get('session')->configuration)){
                   $configKey =  $di->get('session')->configuration ;
-                }
-
-                //On a changer de XML une fois authentifier alors on doit refaire le login
-                 if($di->get('dispatcher')->getParam("configuration") !== null && ($di->get('session')->configuration)!== null){
-                  if(($di->get('session')->configuration) !== $di->get('dispatcher')->getParam("configuration")){
-                   //TODO: Faire que la deconnexion se fasse içi
-                   $response = new \Phalcon\Http\Response();
-                   return $response->redirect('connexion/deconnexion', true);
-                     }
                 }
 
                 //On lit la configuration XML pour obtenir l'attribut module
@@ -346,14 +336,12 @@ $di->set('router', function(){
 
                   //Dans le config.php tout les modules d'authentificaiton sont validées et comparrer avec celui du XML
                   foreach ($config->application->authentification->module as $key => $value) {
-                      if (!is_object ($value) && $moduleAuthMultiple === false) {
-                          $authentificationModule = new $value;
+                          $authentificationModule = new $key;
                           if ($authentificationModule instanceof AuthentificationController) {
                               array_push ($authentificationModules, $authentificationModule);
                           } else {
                               error_log ("Le module d'authentificaiton n'est pas une instance d'AuthentificationController");
-                          }
-                      }
+                          } 
                   }
 
                   if (isset ($module)) {
