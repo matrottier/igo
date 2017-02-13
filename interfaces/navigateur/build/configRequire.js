@@ -3,6 +3,7 @@ require.config({
                 analyseurConfig: 'js/app/analyseur/analyseurConfig',
                 analyseurGML: 'js/app/analyseur/analyseurGML',
                 analyseurGeoJSON: 'js/app/analyseur/analyseurGeoJSON',
+                serveur: 'js/app/api/serveur',
                 contexteMenu: 'js/app/contexteMenu/contexteMenu',
                 contexteMenuArborescence: 'js/app/contexteMenu/contexteMenuArborescence',
                 contexteMenuCarte: 'js/app/contexteMenu/contexteMenuCarte',
@@ -19,6 +20,8 @@ require.config({
                 vecteurCluster: 'js/app/couche/protocole/vecteurCluster',
                 ligne: 'js/app/occurence/geometrie/ligne',
                 limites: 'js/app/occurence/geometrie/limites',
+                collection: 'js/app/occurence/geometrie/collection',
+                geometrie: 'js/app/occurence/geometrie/geometrie',
                 multiPoint: 'js/app/occurence/geometrie/multiPoint',
                 multiLigne: 'js/app/occurence/geometrie/multiLigne',
                 multiPolygone: 'js/app/occurence/geometrie/multiPolygone',
@@ -37,7 +40,6 @@ require.config({
                 arborescence: 'js/app/menu/arborescence',
                 googleItineraire: 'js/app/menu/googleItineraire',
                 googleStreetView: 'js/app/menu/googleStreetView',
-                impression: 'js/app/menu/impression',
                 itineraire: 'js/app/menu/itineraire',
                 localisation: 'js/app/menu/localisation',
                 recherche: 'js/app/menu/recherche/recherche',
@@ -70,6 +72,7 @@ require.config({
                 outilZoomEtendueMaximale: 'js/app/outil/outilZoomEtendueMaximale',
                 outilZoomPreselection: 'js/app/outil/outilZoomPreselection',
                 outilZoomRectangle: 'js/app/outil/outilZoomRectangle',
+                outilExportCSV: 'js/app/outil/outilExportCSV',
                 panneau: 'js/app/panneau/panneau',
                 panneauAccordeon: 'js/app/panneau/panneauAccordeon',
                 panneauCarte: 'js/app/panneau/panneauCarte',
@@ -95,6 +98,13 @@ require.config({
                 fileUploadField: 'empty:',
                 getInfo: 'empty:',
                 handlebars: 'empty:',
-                IGODatePicker: 'empty:'
+                IGODatePicker: 'empty:',
+                fixOpenLayersRequire: 'empty:',
+                html2canvas: 'empty:',
+                html2canvassvg: 'empty:',
+	        rgbcolor: "empty:",
+                stackblur: "empty:",
+	        canvg: "empty:",
+                es6promise: 'empty:'
         }
 });

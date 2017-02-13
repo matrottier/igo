@@ -71,9 +71,20 @@ define(['recherche', 'aide', 'point', 'style', 'limites'], function(Recherche, A
             ]
         });
 
-       var styles = {defaut: {visible: false}, select: style};
+        var survolStyle = style.cloner();
+        survolStyle.definirPropriete('opacite', 0.8);
 
-        var vecteur = this.creerVecteurRecherche(styles);
+        var styles = {defaut: {visible: false}, select: style, survol: survolStyle};
+        if(this.options.idResultatTable){
+            styles.defaut = style;
+        }
+        var vecteur = this.creerVecteurRecherche(styles, this.ajouterOccurences, {responseJSON: responseJSON});
+
+    };
+   
+    RechercheLieu.prototype.ajouterOccurences = function(e) {
+        var vecteur = e.target;
+        var responseJSON = e.options.params.responseJSON;
         $.each(responseJSON.geocoderReponseListe, function(key, value) {
             var point;
             if (!value.localisation) {
@@ -90,9 +101,9 @@ define(['recherche', 'aide', 'point', 'style', 'limites'], function(Recherche, A
             
             $.each(value.placeListe, function(keyPlace, place){
                 if(place.type === 'Municipalité'){
-                    value.lieu = place.nom;
-                } else if (place.type === 'Lieu'){
                     value.municipalite = place.nom;
+                } else if (place.type === 'Lieu'){
+                    value.lieu = place.nom;
                 }
             });
             vecteur.creerOccurence(point, value);

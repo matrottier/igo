@@ -31,6 +31,7 @@ define(['outil', 'aide', 'fonctions'], function(Outil, Aide, Fonctions) {
         var oMeasrLinearCtrlOptions = {
             title: "Effectuer une mesure linéaire.",
             geodesic: true,
+            immediate: true,
             eventListeners: {
                 activate: function(e){
                     that.displayMeasr('');
@@ -63,6 +64,7 @@ define(['outil', 'aide', 'fonctions'], function(Outil, Aide, Fonctions) {
         var oMeasrPolgnCtrlOptions = {
             title: "Effectuer une mesure surfacique.",
             geodesic: true,
+            immediate: true,
             eventListeners: {
                 activate: function(e){
                     that.displayMeasr('', '');
@@ -335,9 +337,22 @@ define(['outil', 'aide', 'fonctions'], function(Outil, Aide, Fonctions) {
                 Aide.obtenirNavigateur().evenements.ajouterDeclencheur("occurenceSelectionnee", function(evt){
                     that.mesureSelection(evt, undefined);
                 }, {scope: this, id: "outilMesureOccurenceSelectionnee"});   
+
+                Aide.obtenirNavigateur().evenements.ajouterDeclencheur("occurenceModifiee", function(evt){
+                    that.mesureSelection(evt, undefined);
+                }, {scope: this, id: "outilMesureOccurenceModifiee"});   
+
+              /*  Aide.obtenirNavigateur().evenements.ajouterDeclencheur("mesure", function(evt){
+                    that.mesureSelection(evt, undefined);
+                }, {scope: this, id: "outilMesureOccurenceCreation"});  
+
+                Aide.obtenirNavigateur().evenements.ajouterDeclencheur("mesurePartielle", function(evt){
+                    that.mesureSelection(evt, undefined);
+                }, {scope: this, id: "outilMesureOccurenceCreationPartielle"});  */
             });
             oWindowMeasr.on('hide', function(win) {
                 Aide.obtenirNavigateur().evenements.enleverDeclencheur("occurenceSelectionnee", "outilMesureOccurenceSelectionnee");
+                Aide.obtenirNavigateur().evenements.enleverDeclencheur("occurenceModifiee", "outilMesureOccurenceModifiee");
             });
 
             oWindowMeasr.on('minimize', function(){
@@ -364,9 +379,59 @@ define(['outil', 'aide', 'fonctions'], function(Outil, Aide, Fonctions) {
             }
             
         }
-        oWindowMeasr.show();
+        this.oWindowMeasr = oWindowMeasr;
+        this.afficherFenetre();
     };
     
+    /**
+     * Afficher la fenêtre de l'outil
+     * @method
+     * @returns {bool} true/false si la fenêtre a été affiché ou non
+     */
+    OutilMesure.prototype.afficherFenetre = function() {
+        
+        if(this.oWindowMeasr)
+        {
+            this.oWindowMeasr.show();
+            return true;
+        }
+        else
+            return false;
+    };
+    
+    /**
+     * Masquer la fenêtre de l'outil
+     * @method
+     * @returns {bool} true/false si la fenêtre a été masqué ou non
+     */
+    OutilMesure.prototype.cacherFenetre = function() {
+        if(this.oWindowMeasr)
+        {
+            this.oWindowMeasr.hide();
+            return true;
+        }
+        else 
+            return false;
+    };
+    
+    /**
+     * Positionner la fenêtre selon les coordonnées gauche, haut
+     * @method
+     * @param {integer} gauche Coordonnée de position gauche de la fenêtre
+     * @param {integer} haut Coordonnée de la position droite de la fenêtre
+     */
+    OutilMesure.prototype.positionnerFenetre = function(gauche,haut) {
+        this.oWindowMeasr.setPosition(gauche, haut);
+    };
+    
+    /**
+     * Obtenir l'objet de la fenêtre
+     * @method
+     * @returns {object} Objet Ext de la fenêtre
+     */
+    OutilMesure.prototype.obtenirFenetre = function() {
+        return this.oWindowMeasr;
+    }
 
 
     return OutilMesure;

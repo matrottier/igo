@@ -1,16 +1,16 @@
-/** 
+/**
  * Module pour l'objet {@link AnalyseurConfig}.
  * @module analyseurConfig
- * @requires aide 
- * @requires navigateur 
- * @requires carte 
- * @requires contexte 
+ * @requires aide
+ * @requires navigateur
+ * @requires carte
+ * @requires contexte
  * @author Marc-André Barbeau, MSP
  * @version 1.0
  */
 
-define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, Navigateur, Carte, Contexte, Evenement) {
-    /** 
+define(['aide', 'navigateur', 'carte', 'contexte', 'evenement', 'serveur'], function(Aide, Navigateur, Carte, Contexte, Evenement, Serveur) {
+    /**
      * Création de l'object AnalyseurConfig.
      * @constructor
      * @name AnalyseurConfig
@@ -18,9 +18,9 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
      * @alias analyseurConfig:AnalyseurConfig
      * @requires analyseurConfig
      * @param {object} options Liste des options possibles
-     * @param {object | string} [options.configuration='defaut'] La 
-     * configuration dans le format json en paramètre ou appelle l'api 
-     * ([api]/configuration/[options.configuration]) pour obtenir 
+     * @param {object | string} [options.configuration='defaut'] La
+     * configuration dans le format json en paramètre ou appelle l'api
+     * ([api]/configuration/[options.configuration]) pour obtenir
      * le json ou le xml.  (voir la documentation du XML)
      * @param {string} [options.configuration] todo: à complèter
      * @param {function} [options.callback] Function appelée lorsque l'initialisation
@@ -38,9 +38,9 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
     };
 
 
-    /** 
-     * Initialisation de l'object AnalyseurConfig. 
-     * @method 
+    /**
+     * Initialisation de l'object AnalyseurConfig.
+     * @method
      * @private
      * @name AnalyseurConfig#_init
     */
@@ -48,11 +48,11 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         this.options = $.extend({}, this.defautOptions, this.options);
     };
 
-    /** 
+    /**
      * Sert à charger le navigateur selon la configuration donnée lors de la création de {@link AnalyseurConfig}.
-     * Si la configuration est un string, appelle l'api ([api]/configuration/[options.configuration]) pour obtenir 
+     * Si la configuration est un string, appelle l'api ([api]/configuration/[options.configuration]) pour obtenir
      * le json ou le xml.
-     * @method 
+     * @method
      * @name AnalyseurConfig#charger
      * @returns {Navigateur} Le navigateur construit: @link Navigateur
     */
@@ -64,6 +64,9 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
             var url = Aide.obtenirConfig('uri.api')+"configuration/" + this.options.configuration;
             $.ajax({
                 url: url,
+                data: {
+                    mode: Aide.obtenirParametreURL('mode')
+                },
                 context: this,
                 success: function(data){
                     this._chargementConfigSuccess(data);
@@ -76,24 +79,24 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         return this.igo;
     };
 
-    /** 
-     * Fonction appelée si l'api retourne un erreur lors de l'obtention de la configuration. 
+    /**
+     * Fonction appelée si l'api retourne un erreur lors de l'obtention de la configuration.
      * Affiche les erreurs obtenues.
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_chargementError
     */
     AnalyseurConfig.prototype._chargementConfigError = function(XMLHttpRequest, textStatus, errorThrown) {
         $("#igoLoading").remove();
-        var message = XMLHttpRequest.responseJSON ? XMLHttpRequest.responseJSON.error : XMLHttpRequest.responseText;
-        if(!message){message = "Erreur lors du chargement de la configuration. (" + textStatus +")";}
-        Aide.afficherMessage("Erreur chargement configuration", message, null, 'ERROR');
+        var message = XMLHttpRequest.responseJSON ? XMLHttpRequest.responseJSON.error : undefined;
+        if(!message){message = "Erreur lors du chargement de la configuration XML. (" + textStatus +")";}
+        Aide.afficherMessage("Erreur chargement de la configuration XML", message, null, 'ERROR');
     };
 
-    /** 
-     * Fonction appelée si la configuration est obtenue. 
+    /**
+     * Fonction appelée si la configuration est obtenue.
      * @param {object} config La configuration en format json ou xml
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_chargementConfigSuccess
     */
@@ -166,6 +169,9 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
             this.igo.nav = new Navigateur(new Carte(this.contexteAttributs), Aide.obtenirConfigXML("attributs"));
             this.igo.nav.analyseur = this;
             this.igo.nav.evenements = new Evenement();
+            if(Aide.obtenirConfigXML('client')){
+                new Serveur();
+            }
             this._analyserCouches(groupeCouches);
         } else {
             Aide.afficherMessageChargement({titre: "Chargement des couches"});
@@ -188,18 +194,18 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
                 }
 
                 that.igo.nav.carte.gestionCouches.enleverToutesLesCouches();
-                that._analyserCouches(groupeCouches);                     
+                that._analyserCouches(groupeCouches);
             });
         }
     }
-    
-    /** 
+
+    /**
      * Convertie la configuration xml en json.
      * @param {object} xml Configuration dans le format xml.
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_chargementConfigSuccess
-     * @returns {object} Configuration dans le format json 
+     * @returns {object} Configuration dans le format json
     */
     AnalyseurConfig.prototype._xml2Json = function(xml) {
         var obj = {};
@@ -240,12 +246,12 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         return obj;
     };
 
-    /** 
+    /**
      * Obtenir les modules requis pour le json en paramètre
      * @param {object} json Partie de la configuration à analyser
      * @param {tableau} [modulesReq = []] Tableau des modules requis
      * @param {entier} [niveauForage = 1] Nombre de niveau du json à analyser
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_analyserRequire
      * @returns {array} Tableau des modules requis
@@ -298,19 +304,19 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         return modulesReq;
     };
 
-    /** 
+    /**
      * Analyser la section "panneaux" de la config
      * @param {object} json Partie de la configuration concernant les panneaux
      * @param {Panneau|Navigateur} [panneauOccurence = Navigateur] Parent des panneaux
      * @method
-     * @private 
+     * @private
      * @name AnalyseurConfig#_analyserRequire
     */
     AnalyseurConfig.prototype._analyserPanneaux = function(json, panneauOccurence) {
         var that = this;
         var parent = panneauOccurence || this.igo.nav;
         var tagPermis = ['panneau', 'element-accordeon', 'element'];
-        var modulesReq = ['panneau'];
+        var modulesReq = ['panneau', 'panneauCarte'];
         modulesReq = this._analyserRequire(json, modulesReq);
 
         require(modulesReq, function() {
@@ -331,22 +337,27 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
                             if (!options.centre) {
                                 options.centre = that.contexteAttributs.centre;
                             };
-                            
                             if (!options.zoom) {
                                 options.zoom = that.contexteAttributs.zoom;
                             };
                         };
 
-                        var panneauOccurence = new Igo.Panneaux[classe](options);
-                        parent.ajouterPanneau(panneauOccurence);
+                        var panneauOccurenceT = new Igo.Panneaux[classe](options);
+                        parent.ajouterPanneau(panneauOccurenceT);
 
                         if (panneau.element || panneau["element-accordeon"]) {
-                            that._analyserPanneaux(panneau, panneauOccurence);
+                            that._analyserPanneaux(panneau, panneauOccurenceT);
                         }
                     });
                 });
             }
             if (!panneauOccurence) {
+                if(!parent.obtenirPanneauxParType("PanneauCarte").length){
+                    parent.ajouterPanneau(new Igo.Panneaux.PanneauxCarte({
+                        centre: that.contexteAttributs.centre,
+                        zoom: that.contexteAttributs.zoom
+                    }));
+                }
                 that.igo.nav.init(function() {
                     that.fin.panneaux = true;
                     that._analyserContexte();
@@ -357,17 +368,22 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         });
     };
 
-    /** 
+    /**
      * Charger le contexte enregistré
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_analyserContexte
     */
     AnalyseurConfig.prototype._analyserContexte = function() {
         if (this.fin.panneaux && this.fin.couches && this.fin.actions) {
-            var contexte = new Contexte();
-            contexte.charger();
-            this._fin();
+            if(window.arboLoadingNb === 0) {
+                var contexte = new Contexte();
+                contexte.charger();
+                this._fin();
+            } else {
+                var that = this;
+                setTimeout(function(){that._analyserContexte()}, 500);
+            }
         }
     };
 
@@ -379,17 +395,18 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         this.fin.analyse = true;
         this._analyserDeclencheurs(Aide.obtenirConfigXML('declencheurs'));
         $("#igoLoading").remove();
+
         if(this.options.callback){
             this.options.callback.call(this.igo.nav);
         }
         this._analyserAvertissements();
     };
-    
-    /** 
+
+    /**
      * Analyser la section "outils" de la config
      * @param {object} json Partie de la configuration concernant les outils
      * @param {BarreOutil|OutilMenu} [outilOccurence] Parent des outils
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_analyserOutils
     */
@@ -411,7 +428,7 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
             } else {
                 arrayGroupeOutils = [json];
             }
-            
+
             arrayGroupeOutils = $.isArray(arrayGroupeOutils) ? arrayGroupeOutils : [arrayGroupeOutils];
             $.each(arrayGroupeOutils, function(key, groupeOutils) {
                 var listOutils = [];
@@ -444,7 +461,7 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
                         }
                         if(options.actionScope){
                             options.actionScope = that._pathShortToLong(options.actionScope);
-                        }                   
+                        }
                         var outilOccurence = new Igo.Outils[classe](options);
                         listOutils.push(outilOccurence);
 
@@ -464,19 +481,21 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         });
     };
 
-    /** 
+    /**
      * Analyser la section "couches" de la config
      * @param {object} json Partie de la configuration concernant les couches
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_analyserCouches
     */
     AnalyseurConfig.prototype._analyserCouches = function(json) {
         var that = this;
-        var igoGeometrieReq = ['occurence', 'point', 'ligne', 'polygone', 'multiPoint', 'multiLigne', 'multiPolygone', 'limites', 'style'];
+        var igoGeometrieReq = ['occurence', 'point', 'ligne', 'polygone', 'multiPoint', 'multiLigne', 'multiPolygone', 'collection', 'limites', 'style'];
         var modulesReq = ['google', 'blanc', 'OSM', 'TMS', 'WMS', 'vecteur', 'vecteurCluster', 'marqueurs'];
         modulesReq = this._analyserRequire(json, modulesReq);
         var igoGeoReq = igoGeometrieReq.concat(modulesReq);
+        that.listCouchesApresContexte = [];
+        window.arboLoadingNb = 0;
 
         require(igoGeoReq, function() {
             var gReqSize = igoGeometrieReq.length;
@@ -488,42 +507,51 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
             Igo.Couches = Aide.getRequisObjet(modulesReq, argsObj.splice(0, cReqSize));
 
             var listCouches = [];
+            var listCouchesApresContexte = [];
 
             var arrayCouches = $.isArray(json) ? json : [json];
             $.each(arrayCouches, function(key, couches) {
                 if (!couches || !couches.couche) {
                     return true;
                 };
-                
+
                 var couchesOptions = couches["@attributes"] || couches["attributs"];
                 var propriete = $.isArray(couches.couche) ? couches.couche : [couches.couche];
                 $.each(propriete, function(key, couche) {
                     var options = couche["@attributes"] || couche["attributs"];
                     if(options.infoAction){
                         options.infoAction = that._pathShortToLong(options.infoAction);
-                    }   
+                    }
                     options.droit = options.droit || couche.droit;
                     options = $.extend({}, couchesOptions, options);
                     var classe = options.protocole;
                     options.typeContexte = 'contexte';
+                    if (options.mode === 'getCapabilities') {
+                        window.arboLoadingNb++;
+                    }
                     var coucheOccurence = new Igo.Couches[classe](options);
-                    listCouches.push(coucheOccurence);
+                    if(!Aide.toBoolean(options.chargementApresContexte)){
+                        listCouches.push(coucheOccurence);
+                    } else {
+                        listCouchesApresContexte.push(coucheOccurence);
+                    }
                 });
             });
-            
+
             if (listCouches.length === 0 || !listCouches[0].estFond() || listCouches[0].obtenirTypeClasse()==='Google') {
                 that._ajouterCoucheBlanc(listCouches);
                 return true;
             }
-            ;
+
+            that.listCouchesApresContexte = listCouchesApresContexte;
             that._analyserCouchesSuccess(listCouches);
         });
     };
 
-    /** 
+    /**
      * Appeler lorsque l'analyse des couches est terminée
      * @param {tableau} listCouches Tableau de {@link Couche} à ajouter à la carte
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_analyserCouches
     */
@@ -536,10 +564,10 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         }
     };
 
-    /** 
+    /**
      * Ajouter la couche 'Blanc' lorsque la carte n'a pas de couche de fond.
      * @param {tableau} listCouches Tableau de {@link Couche} à ajouter à la carte
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_ajouterCoucheBlanc
     */
@@ -548,11 +576,11 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         this._analyserCouchesSuccess(listCouches);
     };
 
-    /** 
+    /**
      * Sert à charger le contexte de la BD. Utilise le contexte.attributes.id ou le contexte.attributes.code du json
      * Si id, appelle l'api ([api]/contexte/[contexte.attributes.id]) pour obtenir les couches de la bd.
      * Si code, appelle l'api ([api]/contexteCode/[contexte.attributes.code]) pour obtenir les couches de la bd.
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_analyserContexteBD
     */
@@ -586,7 +614,7 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         } else if(this.options.contexteId) {
             contexteId = this.options.contexteId;
         }
-   
+
         var contexteUrl;
         if (contexteId && contexteId !== "null") {
             contexteUrl = Aide.obtenirConfig('uri.api')+"contexte/" + contexteId;
@@ -594,12 +622,19 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
             contexteUrl = Aide.obtenirConfig('uri.api')+"contexteCode/" + contexteCode;
         } else {
             this.fin.couches = true;
-            this._analyserContexte();
+            setTimeout(function () {
+                that.igo.nav.carte.gestionCouches.ajouterCouches(that.listCouchesApresContexte);
+                that._analyserContexte();
+            }, 1);
+
             return true;
         }
 
         $.ajax({
             url: contexteUrl,
+            data: {
+                trier: this.contexteAttributs.trier
+            },
             context: this,
             success: this._analyserContexteBDSuccess,
             error: this._analyserContexteBDError,
@@ -607,10 +642,10 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         });
     };
 
-    /** 
-     * Fonction appelée si l'api retourne un erreur lors de l'obtention des couches du contexte. 
+    /**
+     * Fonction appelée si l'api retourne un erreur lors de l'obtention des couches du contexte.
      * Affiche les erreurs obtenues.
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_analyserContexteBDError
     */
@@ -619,12 +654,14 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         var message = XMLHttpRequest.responseJSON ? XMLHttpRequest.responseJSON.error : XMLHttpRequest.responseText;
         if(!message){message = "Erreur lors du chargement du contexte. (" + textStatus +")";}
         Aide.afficherMessage("Erreur chargement contexte", message, null, 'ERROR');
+        this.fin.couches = true;
+        this._analyserContexte();
     };
 
-    /** 
+    /**
      * Analyser les couches reçues de la BD
      * @param {object} data Json des couche à ajouter à la carte
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_analyserContexteBDSuccess
     */
@@ -632,11 +669,30 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         var that = this;
         var listCouches = [];
         var couches = $.isArray(data) ? data : data.couches || [];
+        var layernamePermis = Aide.obtenirParametreURL("layername");
+        if(layernamePermis){
+            layernamePermis = layernamePermis.split(',');
+        }
+        var layerActif = Aide.obtenirParametreURL("layeractif");
+        if(layerActif){
+            layerActif = layerActif.split(',');
+        }
         $.each(couches, function(key, couche) {
+            var layername = couche.mf_layer_name || couche.mf_layer_meta_name;
+            if(layernamePermis){
+                if(layernamePermis.indexOf(layername) === -1){
+                    return true;
+                }
+                couche.est_active = true;
+            } else if (layerActif){
+                if(layerActif.indexOf(layername) !== -1){
+                    couche.est_active = true;
+                }
+            }
             var options = {
                 id: couche.couche_id,
                 url: couche.mf_map_meta_onlineresource || data.mf_map_meta_onlineresource,
-                nom: couche.mf_layer_name || couche.mf_layer_meta_name,
+                nom: layername,
                 titre: couche.mf_layer_meta_title,
                 active: couche.est_active,
                 visible: couche.est_visible,
@@ -657,12 +713,12 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
                 wms_timeextent: couche.wms_timeextent,
                 msp_wmst_multiplevalues: couche.msp_wmst_multiplevalues,
                 wms_timeformat: couche.wms_timeformat
-                
             };
+
             if(Aide.obtenirConfig("uri.mapserver")){
                 if(Aide.obtenirConfig("uri.mapserver") !== true){
                     options.url = Aide.obtenirConfig("uri.mapserver") + options.url;
-                }            
+                }
             } else {
                 options.url = Aide.obtenirConfig("uri.api") + "wms/" + data.id;
             }
@@ -674,11 +730,16 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         });
 
         this.igo.nav.carte.gestionCouches.ajouterCouches(listCouches);
+
         if(data.avertissements){
             this.avertissements = this.avertissements.concat(data.avertissements);
         }
-        that.fin.couches = true;
-        that._analyserContexte();
+        this.fin.couches = true;
+
+        setTimeout(function () {
+            that.igo.nav.carte.gestionCouches.ajouterCouches(that.listCouchesApresContexte);
+            that._analyserContexte();
+        }, 1);
     };
 
 
@@ -721,10 +782,10 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         return objet;
     }
 
-    /** 
+    /**
      * Analyser la section "declencheurs" de la config
      * @param {object} json Partie de la configuration concernant les déclencheurs
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_analyserDeclencheurs
     */
@@ -748,10 +809,10 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
         });
     };
 
-    /** 
+    /**
      * Analyser la section "actions" de la config
      * @param {object} json Partie de la configuration concernant les actions
-     * @method 
+     * @method
      * @private
      * @name AnalyseurConfig#_analyserActions
     */
@@ -773,7 +834,7 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
                 if (aJSExt !== -1) {
                     source = source.substr(0, aJSExt);
                 }
-                
+
                 var paths = {};
                 paths[id] = source;
                 require.ajouterConfig({
@@ -789,11 +850,11 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
     };
 
 
-    /** 
+    /**
      * Sert à charger une couche de la bd selon son ID
      * Appelle l'api ([api]/couche/[coucheId]) pour obtenir les informations sur la couche
      * @param {string} coucheId Le ID de la couche
-     * @method 
+     * @method
      * @name AnalyseurConfig#_analyserCoucheBD
     */
     AnalyseurConfig.prototype._analyserCoucheBD = function(coucheId) {
@@ -806,12 +867,12 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
             dataType: 'json'
         });
     };
-    
-    /** 
+
+    /**
      * Sert à analyser les avertissements subvenus lors du chargement de la config
      * Affiche la liste des avertissements à l'utilisateur
      * @param {tableau} avertissements Tableau d'avertissements (string) à afficher.
-     * @method 
+     * @method
      * @name AnalyseurConfig#_analyserAvertissements
     */
     AnalyseurConfig.prototype._analyserAvertissements = function(avertissements){
@@ -825,7 +886,7 @@ define(['aide', 'navigateur', 'carte', 'contexte', 'evenement'], function(Aide, 
                Aide.afficherMessageConsole(avertissement);
             });
 
-            
+
         }
     };
 

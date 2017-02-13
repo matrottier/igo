@@ -1,4 +1,4 @@
-/** 
+/**
  * Module pour l'objet {@link Panneau.Recherche}.
  * @module recherche
  * @author Marc-André Barbeau, MSP
@@ -11,11 +11,11 @@
  */
 
 define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], function(Panneau, Vecteur, Aide, PanneauTable) {
-    /** 
+    /**
      * Création de l'object Panneau.Recherche.
      * Objet à ajouter à un objet localisation.
      * @constructor
-     * @abstract 
+     * @abstract
      * @name Panneau.Recherche
      * @class Panneau.Recherche
      * @alias recherche:Panneau.Recherche
@@ -23,6 +23,7 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
      * @requires recherche
      * @param {string} [options.recherchePrefixe] Prefixe de la recherche
      * @param {string} [options.typeRecherche] Type de la recherche
+     * @param {string} [options.lienAide] Lien URL vers une aide
      * @returns {Panneau.Recherche} Instance de {@link Panneau.Recherche}
      * @property {dictionnaire} options Liste des options de la couche
      * @property {Couche.Vecteur} vecteur Vecteur pour le résultat de la recherche
@@ -39,16 +40,18 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
             sauvegarder: true,
             id: 'recherche',
             init: false,
-            zoom: 15
+            infobulleSurvol: false,
+            zoom: 15,
+            lienAide: Aide.utiliserBaseUri("guides/IGO_Navigateur_guide.pdf")
         };
     };
 
     Recherche.prototype = new Panneau();
     Recherche.prototype.constructor = Recherche;
 
-    /** 
-     * Initialisation de l'object recherche. 
-     * @method 
+    /**
+     * Initialisation de l'object recherche.
+     * @method
      * @name Recherche#_init
      */
     Recherche.prototype._init = function() {
@@ -69,11 +72,11 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
             this.aidePanneau,
             this.resultatPanneau
         ]
-        
+
         if (Boolean(this.options.epingle)) {
             items.push(this.obtenirEpingleCheckbox());
         }
-        
+
         if (Boolean(this.options.sauvegarder)) {
             items.push(this.obtenirSauvegarderCheckbox());
         }
@@ -97,16 +100,16 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
                 },
                 activate: function(e){
                     that.declencher({type: that.obtenirTypeClasse()+'Active'});
-                }  
+                }
             }
         });
         this.verifierParamsUrl();
     };
 
 
-    /** 
+    /**
      * Obtenir les valeurs des champs de recherche.
-     * @method 
+     * @method
      * @name Recherche#obtenirValeursRecherche
      * @returns {array} Tableau des valeurs de recherche
      */
@@ -155,7 +158,7 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
      */
     Recherche.prototype.obtenirLienPDF = function() {
         return  "<a href=\'#here\' onclick=\'window.open(\"" +
-                Aide.utiliserBaseUri("guides/200_Guide_Localisation_GeoCOG_V10_OMSC-ANALYSTE.pdf") +
+                this.obtenirLienAide() +
                 "\");\'>" +
                 "Cliquer ici pour avoir plus de détails...</a><br><br>";
     };
@@ -257,13 +260,13 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
                 {
                     if (this.vecteur) {
                         this.vecteur.desactiver();
-                    } 
+                    }
                 }
             }
         });
         return this.pineCheckbox;
     };
-    
+
     Recherche.prototype.obtenirSauvegarderCheckbox = function() {
         this.saveCheckbox = new Ext.create({
             xtype: 'checkbox',
@@ -290,11 +293,12 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
             Aide.afficherMessage({titre: "Recherche", message:'Veillez entrer un texte à chercher'});
             return false;
         }
+        this.textUser = textUser;
         Aide.afficherMessageChargement({message: 'Recherche en cours, patientez un moment...'});
         this.reinitialiserVecteur();
         var texte = '';
         if(this.obtenirRecherchePrefixe()){
-            texte += this.obtenirRecherchePrefixe() + ' '; 
+            texte += this.obtenirRecherchePrefixe() + ' ';
         }
         texte += textUser;
         var typeRecherche = this.obtenirTypeRecherche();
@@ -307,7 +311,7 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
                 epsg_sortie: this.carte.obtenirProjection().split(":")[1],
                 indDebut: this.indexDebut,
                 indFin: this.indexDebut + this.indexFin,
-                format: this.options.format, //"JSON",//"HTML", 
+                format: this.options.format, //"JSON",//"HTML",
                 groupe: 1,
                 urlappelant: this.options.cle ? undefined : this.options.urlAppelant,
                 _cle: this.options.cle
@@ -321,12 +325,12 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
 
         this.declencher({type: "appelerServiceRecherche", recherche: this});
     };
-    
+
     Recherche.prototype.appelerServiceErreur = function(jqXHR){
         var messageErreur = jqXHR.responseText;
         if(jqXHR.responseJSON){
             messageErreur = jqXHR.responseJSON.message_erreur;
-        
+
             if(jqXHR.responseJSON.detail_message){
                 $.each(jqXHR.responseJSON.detail_message, function(key, value){
                     messageErreur += "<br>"+value;
@@ -340,13 +344,17 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
     };
 
     Recherche.prototype.traiterResultatVecteur = function(vecteur){
+        this.declencher({type: "resultatRecherche", vecteur: vecteur, texteRecherche: this.textUser});
+
         vecteur.garderHistorique = true;
+
         var occurence = vecteur.obtenirOccurences()[0];
         if(!occurence){
             return false;
         }
         vecteur.zoomerOccurence(occurence, this.options.zoom);
         occurence.selectionner();
+
         if(this.options.idResultatTable){
             var nav = Aide.obtenirNavigateur();
             var panneauTable = nav.obtenirPanneauParId(this.options.idResultatTable, -1);
@@ -354,26 +362,53 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
             if (panneauTable.obtenirTypeClasse() === 'PanneauTable') {
                 panneauTable.ouvrirTableVecteur(vecteur);
             } else if(panneauTable.obtenirTypeClasse() === 'PanneauOnglet'){
-                var nouvelleTable = new PanneauTable({reductible: false, fermable: true});        
+                var paginer = panneauTable.options.paginer?panneauTable.options.paginer:false;
+                var limite = panneauTable.options.paginer_limite?parseInt(panneauTable.options.paginer_limite):undefined;
+                var debut = panneauTable.options.paginer_debut?parseInt(panneauTable.options.paginer_debut):undefined;
+
+                var nouvelleTable = new PanneauTable({
+                    reductible: false,
+                    fermable: true,
+                    paginer : paginer,
+                    paginer_debut: debut,
+                    paginer_limite: limite,
+                    outils_auto:true,
+                    outils_selectionSeulement: true
+                });
+
                 panneauTable.ajouterPanneau(nouvelleTable);
                 nouvelleTable.ouvrirTableVecteur(vecteur);
-                panneauTable.activerPanneau(nouvelleTable);        
+                panneauTable.activerPanneau(nouvelleTable);
             }
+        }
+
+        if(this.options.infobulleSurvol){
+            vecteur.ajouterDeclencheur('occurenceSurvol', function(e){
+                e.occurence.ouvrirInfobulle({html:e.occurence.proprietes.adresseLibre, aFermerBouton: false});
+            },
+            {scope: this});
+            vecteur.ajouterDeclencheur('occurenceSurvolFin', function(e){
+                e.occurence.fermerInfobulle();
+            },
+            {scope: this});
         }
     }
 
-    Recherche.prototype.creerVecteurRecherche = function(styles) {
+    Recherche.prototype.creerVecteurRecherche = function(styles, callback, paramsCallback) {
         var active = false;
         if (!this.pineCheckbox || this.pineCheckbox.checked) {
             active = true;
         };
-        
+
         var visible = false;
         if (this.saveCheckbox && this.saveCheckbox.checked) {
             visible = true;
         };
-        
-        var vecteur = new Vecteur({active: active, visible: visible , selectionnable: false, suppressionPermise: true, titre: "Resultats Recheche " + this.options.titre + " - " + this.obtenirValeursRecherche()['RechercheTitle' + this.options.id], styles: styles});         
+
+        var vecteur = new Vecteur({legende: false, active: active, visible: visible , selectionnable: false, suppressionPermise: true, titre: "Resultats Recheche " + this.options.titre + " - " + this.obtenirValeursRecherche()['RechercheTitle' + this.options.id], styles: styles});
+        if(callback){
+            vecteur.ajouterDeclencheur("coucheAjoutee", callback, {scope: this, params: paramsCallback});
+        }
         this.carte.gestionCouches.ajouterCouche(vecteur);
         return vecteur;
     };
@@ -390,7 +425,7 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
 
     Recherche.prototype.ajouterPagination = function(nombreResultats) {
         var ajoutFleche = "";
-        
+
         if (nombreResultats === (this.indexFin + 1)) {
             ajoutFleche += "<div align='center'><table>";
             ajoutFleche += "<tr>";
@@ -417,14 +452,16 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
         }
         return ajoutFleche;
     }
-    
-    Recherche.prototype.initEventResultat = function() {       
+
+    Recherche.prototype.initEventResultat = function() {
         $(this.resultatPanneau.items.items[0].body.dom).find('#precedentRecherche')
             .click($.proxy(this.appelPrecedent, this));
         $(this.resultatPanneau.items.items[0].body.dom).find('#suivantRecherche')
             .click($.proxy(this.appelSuivant, this));
         $(this.resultatPanneau.items.items[0].body.dom).find('li.rechercheResultatsListe')
-                .click($.proxy(this.eventResultatClique, this));
+            .click($.proxy(this.eventResultatClique, this))
+            .mouseover($.proxy(this.eventResultatMouseover, this))
+            .mouseout($.proxy(this.eventResultatMouseout, this));
     };
 
     Recherche.prototype.eventResultatClique = function(e) {
@@ -437,7 +474,25 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
         this.vecteur.zoomerOccurence(occurence, this.options.zoom);
         occurence.selectionner();
     };
-    
+
+    Recherche.prototype.eventResultatMouseover = function(e) {
+        var id = $(e.target).parents('.rechercheResultatsListe').data('id');
+        var occurence = this.vecteur.obtenirOccurenceParId(id);
+        if(!occurence){
+            return false;
+        }
+        occurence.appliquerStyle('courant', true);
+    };
+
+    Recherche.prototype.eventResultatMouseout = function(e) {
+        var id = $(e.target).parents('.rechercheResultatsListe').data('id');
+        var occurence = this.vecteur.obtenirOccurenceParId(id);
+        if(!occurence){
+            return false;
+        }
+        occurence.appliquerStyle('courant', false);
+    };
+
     /**
      * Préfixe de la recherche
      * @method
@@ -528,14 +583,15 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
     Recherche.prototype.definirResultat = function(resultatTexte, callback, target) {
         //Masquer le message d'attente
         Aide.cacherMessageChargement();
-        
+
         this.resultatPanneau.show().expand();
         this.resultatPanneau.items.items[0].body.update(resultatTexte);
         if (typeof callback === "function"){
             callback.call(target);
+            this.activerCouchesAssociees();
         }
     };
-    
+
     Recherche.prototype.verifierParamsUrl = function(){
         var recherche = Aide.obtenirParametreURL('recherche');
         if(recherche === this.obtenirTypeRecherche()){
@@ -557,18 +613,18 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
             }
         }
     };
-    
+
     Recherche.prototype.traiterParamsUrl = function(texte){
         var that=this;
         this.parent.ajouterDeclencheur('ajouterPanneau', function(e){
             if(that === e.panneau){
-                e.target.enleverDeclencheur('ajouterPanneau', 'rechercheTraiterParamsURL'); 
+                e.target.enleverDeclencheur('ajouterPanneau', 'rechercheTraiterParamsURL');
                 e.panneau.ajouterDeclencheur(that.obtenirTypeClasse()+'Active', function(e2){
                     e2.target.enleverDeclencheur(that.obtenirTypeClasse()+'Active', 'rechercheTraiterParamsURL2');
                     e2.target.lancerRecherche(texte);
                 }, {id: "rechercheTraiterParamsURL2"});
                 e.target.activerPanneau(e.panneau);
-            } 
+            }
         }, {id: "rechercheTraiterParamsURL"});
         this.parent.ouvrir();
     };
@@ -580,18 +636,80 @@ define(['panneau', 'vecteur', 'aide', 'panneauTable', 'css!css/recherche'], func
      */
     Recherche.prototype.reinitialiserRecherche = function(){
         this.reinitialiserVecteur();
+        this.desactiverCouchesAssociees();
+        this.textUser = undefined;
         $.each(this._panel.items.items, function(index, item){
            if(item.xtype == "textfield" || item.xtype == "numberfield" || item.xtype == "combo"){
                item.reset();
-           }   
+           }
         });
-        
+
         if(this.resultatPanneau.isVisible()){
             this.definirResultat(this.obtenirAideHTML());
         }
     };
+
+    Recherche.prototype.obtenirLienAide = function (){
+        return (typeof this.options.lienAide == undefined)?this.defautOptions.lienAide:this.options.lienAide;
+    }
+
+    /**
+     * Activer couches associées
+     * @method
+     * @name Recherche#activerCouchesAssociees
+     */
+    Recherche.prototype.activerCouchesAssociees = function() {
+        var that = this;
+        
+        if(this.options.couchesAssociees === undefined)
+            return true;
+        
+        var listeCouches = this.options.couchesAssociees.split(",");
+        
+        if(listeCouches === "")
+            return true;
+        
+        $.each(listeCouches, function(index, coucheASelectionner){
+
+            var couches = that.carte.gestionCouches.obtenirCouchesParNom(coucheASelectionner);
+            $.each(couches, function(ind, couche){
+                
+                if(couche)  {
+                couche.activer();
+                }
+            });
+        });          
+    };
     
+    /**
+     * Désacctiver couches associées
+     * @method
+     * @name Recherche#DesactiverCouchesAssociees
+     */
+    Recherche.prototype.desactiverCouchesAssociees = function() {
+        var that = this;
+        
+        if(this.options.couchesAssociees === undefined)
+            return true;
+        
+        var listeCouches = this.options.couchesAssociees.split(",");
+        
+        if(listeCouches === "")
+            return true;
+        
+        $.each(listeCouches, function(index, coucheASelectionner){
+
+            var couches = that.carte.gestionCouches.obtenirCouchesParNom(coucheASelectionner);
+            $.each(couches, function(ind, couche){
+                
+                if(couche)  {
+                    couche.desactiver();
+                }           
+            });   
+        });
+                   
+    };
+
     return Recherche;
 
 });
-

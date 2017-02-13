@@ -40,15 +40,13 @@ $di->set('view', function () use ($config) {
 
     $view = new igoView();
     $view->config = $config;
-    
-    //$view->host=$config->igo->host;
-    if(isset($config->application->pilotage)){
-        //vraiment utile?
-        $view->metadonneesViewsDir=$config->application->pilotage->viewsDir;
+
+    if(isset($config->mapserver) && isset($config->mapserver->host)){
+        $view->host = $config->mapserver->host;
     }
+
     $view->viewsDir=$config->application->navigateur->viewsDir;
-   // $view->mapserver_path=$config->mapserver->url;
-    
+
     $view->setViewsDir($config->application->navigateur->viewsDir);
 
     $view->registerEngines(array(
@@ -61,14 +59,14 @@ $di->set('view', function () use ($config) {
                 'compiledSeparator' => '_',
                 'compileAlways' => (isset($config->application->debug) && $config->application->debug ? true : false)
             ));
-            
+
             return $volt;
         },
         '.phtml' => 'Phalcon\Mvc\View\Engine\Php'
     ));
     return $view;
 }, true);
-   
+
 
 $di->set('dispatcher', function() use($di){
 
@@ -79,7 +77,7 @@ $di->set('dispatcher', function() use($di){
     $eventsManager->attach("dispatch", function($event, $dispatcher, $exception) {
 
         //The controller exists but the action not
-        
+
         if ($event->getType() == 'beforeNotFoundAction') {
             $dispatcher->forward(array(
                 'controller' => 'error',
@@ -87,9 +85,9 @@ $di->set('dispatcher', function() use($di){
             ));
             return false;
         }
-        
+
         //Alternative way, controller or action doesn't exist
-        
+
         if ($event->getType() == 'beforeException') {
             switch ($exception->getCode()) {
                 case Phalcon\Dispatcher::EXCEPTION_HANDLER_NOT_FOUND:
@@ -97,13 +95,13 @@ $di->set('dispatcher', function() use($di){
                     $dispatcher->forward(array(
                         'controller' => 'error',
                         'action' => 'error404'
-                    ));      
-                    
+                    ));
+
                     return false;
             }
         }
     });
-    
+
     $securityPlugin = new SecurityPlugin($di);
     $eventsManager->attach("dispatch", $securityPlugin);
 
@@ -116,6 +114,59 @@ $di->set('dispatcher', function() use($di){
 
 }, true);
 
+/**
+ *    Logger
+**/
+$di->set('logger', function () use ($config) {
+    $pathLogFile = $config->repertoireLogs . "igo.log";
+    return new IGO\Modules\Logger($pathLogFile, $config->application->debug);
+}, true);
+
+
+/**
+ * Encryption pour les mots de passes des couches securisées
+ */
+
+$di->set('crypt', function () use ($config) {
+
+      $crypt = new Phalcon\Crypt();
+
+       if (!class_exists('\\Phalcon\\Version')) {
+              die("La version de Phalcon doit être connue pour appliquer la bonne méthode de chiffrement.");
+           } elseif (\Phalcon\Version::getId () < 3000000 ) {
+                $crypt->setCipher('blowfish');
+                $crypt->setMode('cbc');
+            } elseif (\Phalcon\Version::getId () >= 3000000) { {
+                $crypt->setCipher('AES-256-CFB');
+            }
+         }
+
+
+    if (isset($config->application->authentification['secretXmlFile'])) {
+       $xmlPath = $config->application->authentification->secretXmlFile;
+    }
+
+    if (empty($xmlPath)) {
+        header('Content-Type: text/html; charset=utf-8');
+        http_response_code(401);
+        die("Le paramètre secretXmlFile n'a pas été trouvé dans le config.php");
+    }
+
+    if (file_exists($xmlPath) && !empty($xmlPath) ) {
+        $key = simplexml_load_file($xmlPath, 'SimpleXMLElement', LIBXML_NOCDATA);
+    }
+
+    if (empty($key)) {
+        header('Content-Type: text/html; charset=utf-8');
+        http_response_code(401);
+        die("La clé n'a pas été trouvée dans ce chemin" . $xmlPath . "ou elle n'existe pas!");
+    }
+
+        $crypt->setKey((string)$key['authentification'][0]);
+
+    return $crypt;
+}, true);
+
 
 /**
  * Database connection is created based in the parameters defined in the configuration file
@@ -126,17 +177,17 @@ $di->set('db', function () use ($config) {
     if ( ! class_exists($adapter)){
         throw new \Phalcon\Exception('Invalid database Adapter!');
     }
-    
+
     $connection= new $adapter(array(
         'host' => $config->database->host,
         'username' => $config->database->username,
         'password' => $config->database->password,
         'dbname' => $config->database->dbname
     ));
-	
+
 /*
  *  //Décommenter pour activer le profilage de PGSQL
-	//TODO Activer le profilage PGSQL quand on est en mode debug. On ne devrait pas avoir à décommenter des lignes 
+	//TODO Activer le profilage PGSQL quand on est en mode debug. On ne devrait pas avoir à décommenter des lignes
     $eventsManager = new \Phalcon\Events\Manager();
 
     $eventsManager->attach('db', function($event, $connection) {
@@ -158,32 +209,55 @@ $debug->listen();
 
 if($config->offsetExists("database")) {
     if($config->database->modelsMetadata == 'Apc'){
-        $di->set('modelsMetadata', function() {   
+        $di->set('modelsMetadata', function() {
             // Create a meta-data manager with APC
             $metaData = new \Phalcon\Mvc\Model\MetaData\Apc(array(
                 "lifetime" => 86400,
                 "prefix"   => "igo"
             ));
-            return $metaData;   
+            return $metaData;
         });
     }else if($config->database->modelsMetadata == 'Xcache'){
-        $di->set('modelsMetadata', function() {       
+        $di->set('modelsMetadata', function() {
             $metaData = new Phalcon\Mvc\Model\Metadata\Xcache(array(
             'prefix' => 'igo',
             'lifetime' => 86400 //24h
             ));
-        return $metaData;   
-        });    
+        return $metaData;
+        });
     }
+    else if($config->database->modelsMetadata == 'Redis'){
+        $di->set('modelsMetadata', function() use ($config){
+           $cache = new Phalcon\Mvc\Model\Metadata\Redis(
+              array('lifetime' => 172800,
+               'host' => isset($config->database->modelsMetadataConfig)?$config->database->modelsMetadataConfig->host:'localhost',
+               'port' => isset($config->database->modelsMetadataConfig)?$config->database->modelsMetadataConfig->port:6379,
+               'persistent' => false,
+               'statsKey'   => '_PHCM_MM',
+               'index' => 0
+              )
+            );
+           return $cache;
+         });
+
+      }
 }
 
 /**
  * Start the session the first time some component request the session service
  */
 $di->setShared('session', function () {
-   
+    $cookieName = 'sessionIGO';
     $session = new SessionAdapter();
-    session_name('sessionIGO');
+
+    if (isset($_COOKIE[$cookieName])) {
+        $sessid = $_COOKIE[$cookieName];
+        if (!preg_match('/^[a-zA-Z0-9,\-]{22,40}$/', $sessid)) {
+            unset($_COOKIE[$cookieName]);
+            setcookie($cookieName, '', time() - 3600, '/');
+        }
+    }
+    session_name($cookieName);
     $session->start();
 
     return $session;
@@ -196,6 +270,14 @@ $di->setShared('session', function () {
 $di->set('router', function(){
     $router = new \Phalcon\Mvc\Router();
     //Define a route
+    $router->add(
+        "#^/([a-zA-Z0-9_-]++)#",
+        array(
+            "controller" => "error",
+            "action" => "error404"
+        )
+    );
+
     $router->add(
         "/contexte/{contexte}",
         array(
@@ -228,22 +310,97 @@ $di->set('router', function(){
             "coucheid" => 1
         )
     );
-       
+
+    $router->add(
+        "/connexion/{action}",
+        array(
+            "controller" => "connexion",
+            "action" => 1
+        )
+    );
+
     $router->setDefaults(array('controller' => 'index', 'action' => 'index'));
-    
+
     return $router;
 });
 
-if(isset($config->application->authentification->module)){
-    $authentificationModule = new $config->application->authentification->module;
-    if($authentificationModule instanceof AuthentificationController){
-        $di->set("authentificationModule", $authentificationModule);
-    }else{
-        error_log("Le module d'authentificaiton n'est pas une instance d'AuthentificationController");
-    }
-}else{
-    $di->set("authentificationModule", 'AuthentificationTest');
-}
+  $di->set ('authentificationModule', function () use ($config, $di)  {
+
+            if (isset ($config->application->authentification->module)) {
+
+                $authentificationModules = array ();
+                $configKey =  $di->get('dispatcher')->getParam("configuration");
+
+                //On as mis la configuration XML dans la session alors on la prend
+                if(isset ($di->get('session')->configuration)){
+                  $configKey =  $di->get('session')->configuration ;
+                }
+
+                //On lit la configuration XML pour obtenir l'attribut module
+                //<navigateur authentification="true" authentificationModule="AuthentificationLdap" titre="">
+                if (isset ($configKey)) {
+
+                  if (isset ($config->configurations[$configKey])) {
+                      $xmlPath = $config->configurations[$configKey];
+                  } else {
+                      $xmlPath = $config->configurationsDir . $configKey . '.xml';
+                  }
+
+                  if (file_exists ($xmlPath)) {
+                      $element = simplexml_load_file ($xmlPath, 'SimpleXMLElement', LIBXML_NOCDATA);
+                  } else {
+                      $element = simplexml_load_string (curl_file_get_contents ($xmlPath), 'SimpleXMLElement', LIBXML_NOCDATA);
+                  }
+
+                  if (isset ($element->attributes ()->authentificationModule)) {
+                      $module = $element->attributes ()->authentificationModule;
+                  } else {
+                      $module = "AuthentificationTest";
+                      array_push ($authentificationModules, new $module);
+                  }
+
+                  //Dans le config.php tout les modules d'authentificaiton sont validées et comparrer avec celui du XML
+                  foreach ($config->application->authentification->module as $key => $value) {
+                          $authentificationModule = new $key;
+                          if ($authentificationModule instanceof AuthentificationController) {
+                              array_push ($authentificationModules, $authentificationModule);
+                          } else {
+                              error_log ("Le module d'authentificaiton n'est pas une instance d'AuthentificationController");
+                          }
+                  }
+
+                  if (isset ($module)) {
+                      foreach ($authentificationModules as $k => $v) {
+                          $moduleXml = (array) $module;
+                          $authentificationModuleXml = new $moduleXml[0];
+                          if ($v == $authentificationModuleXml) {
+                              $authentificationModule = $authentificationModuleXml;
+                                  return $authentificationModule;
+                          }
+                      }
+                  }
+             }
+             else{
+               //Par défaut, le premier module d'authentification est configuré
+               $authentificationModule = key($config->application->authentification->module);
+               $authentificationModule = new $authentificationModule;
+               if($authentificationModule instanceof AuthentificationController){
+                   return $authentificationModule;
+               }
+               else{
+                 error_log ("Le module d'authentificaiton n'est pas une instance d'AuthentificationController");
+               }
+
+             }
+            }
+           else {
+                $module = "AuthentificationTest";
+                $authentificationModule = new $module ;
+                return $authentificationModule;
+            }
+
+        });
+
 
 
 
@@ -258,63 +415,29 @@ class igoView extends Phalcon\Mvc\View {
                 print('<script src="'. $this->config->uri->librairies . $chemin . "?version=" . $this->config->application->version . '" type="text/javascript"></script>'. "\n");
             } else {
                 print('<script src="'. $chemin .'" type="text/javascript"></script>'. "\n");
-            }   
+            }
         }else{
             print('<script src="'. $this->config->application->baseUri . $chemin . "?version=" . $this->config->application->version . '" type="text/javascript"></script>'. "\n");
         }
     }
 
-    public function ajouterCss($chemin, $estExterne, $dansUriLibrairies=null){       
+    public function ajouterCss($chemin, $estExterne, $dansUriLibrairies=null){
         if($estExterne === true){
             if($dansUriLibrairies === true){
                 print('<link rel="stylesheet" href="'. $this->config->uri->librairies . $chemin . "?version=" . $this->config->application->version .  '" type="text/css"/>'. "\n");
             } else {
                 print('<link rel="stylesheet" href="'. $chemin . '" type="text/css"/>'. "\n");
-            }   
+            }
         }else{
             print('<link rel="stylesheet" href="'. $this->config->application->baseUri . $chemin . "?version=" . $this->config->application->version .  '" type="text/css"/>'. "\n");
         }
     }
-    
-    public function ajouterImage($source, $alt){        
+
+    public function ajouterImage($source, $alt){
         print('<img src="' . $this->config->application->baseUri . $source . '" alt="'. $alt . '">'. "\n");
     }
-    
+
     public function ajouterBaseUri(){
         print($this->config->application->baseUri);
-    }
-    
-    /**
-     * Ajoute tous les scripts Javascript requis pour chacun des modules.
-     * 
-     * @return void
-     */
-    public function ajouterJavascriptModules() {
-        $chargeurModules = $this->getDi()->get('chargeurModules');
-        $librairies = $chargeurModules->obtenirLibrairiesJavascript();
-
-        foreach($librairies as $url) {
-            print('<script src="' . $url . '" type="text/javascript"></script>' . PHP_EOL);
-        }
-    }
-
-    /**
-     * Ajoute un module RequireJS qui expose des configurations
-     * spécifiées dans le fichier de configuration IGO.
-     * 
-     * @return string Un contenu text définissant le module de configuration.
-     */
-    public function ajouterModuleConfigurations() {
-        $config = $this->getDi()->get('config');
-        
-        echo '
-        <script type="text/javascript">
-            define("Configuration", [], function() {
-                return {
-                    uri: ' . json_encode($config->get('uri')) . '
-                };
-            })
-        </script>
-        ';
     }
 }

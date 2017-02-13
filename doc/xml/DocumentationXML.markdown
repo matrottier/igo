@@ -12,14 +12,13 @@ Fichier XML de configuration
 			* [1.1.1.6 Panneau Onglet](#panneauonglet)
 			* [1.1.1.7 Panneau table](#panneautable)
 			* [1.1.1.8 Création d'un panneau personnalisé](#creation-panneau-personnalisé)
-			* [1.1.2 Élément de panneau accordeon](#elementAccordeon)
+			* [1.1.2 Élément de panneau accordeon](#element-panneau-accordeon)
 			* [1.1.2.1 Arborescence](#arborescence)
 			* [1.1.2.2 Impression](#impression)
 			* [1.1.2.3 Localisation](#localisation)
-			* [1.1.2.3 Google Itinéraire](#googleItineraire)
-			* [1.1.2.3 Google Street View](#googleStreetView)
-			* [1.1.2.4 Création d'un élément de panneau accordéon personnalisé](#creationelementpanneauaccordeonpersonnalise)
-			* [1.1.3 Élément de localisation](#elementlocalisation)
+			* [1.1.2.3 Google Itinéraire](#googleitineraire---pas-implanté)
+			* [1.1.2.3 Google Street View](#googlestreetview---pas-implanté)
+			* [1.1.3 Élément de localisation](#Élément-de-localisation)
 			* [1.1.3.1 Recherche par adresse](#rechercheadresse)
 			* [1.1.3.2 Recherche par borne](#rechercheborne)
 			* [1.1.3.3 Recherche par cadastre rénové ](#recherchecadastrereno)
@@ -37,28 +36,28 @@ Fichier XML de configuration
 			* [1.2.3 Outil](#outil)
 			* [1.2.3.1 outilAide](#outilaide)
 			* [1.2.3.2 outilAjoutWMS](#outilajoutwms)
-			* [1.2.3.3 outilAssocierFichier](#outilassocierFichier)
-			* [1.2.3.4 outilAnalyseSpatiale](#outilanalysespatiale)
+			* [1.2.3.3 outilAssocierFichier](#outilassocierfichier)
+			* [1.2.3.4 outilAnalyseSpatiale](#outilanalysespatiale---non-implanté)
 			* [1.2.3.5 outilDeplacement](#outildeplacement)
 			* [1.2.3.6 outilDessin](#outildessin)
 			* [1.2.3.7 outilExportGPX](#outilexportgpx)
 			* [1.2.3.8 outilExportShp](#outilexportshp)
 			* [1.2.3.9 outilHistoriqueNavigation](#outilhistoriquenavigation)
-			* [1.2.3.10 outilnfo](#outilinfo)
+			* [1.2.3.10 outilInfo](#outilinfo)
 			* [1.2.3.11 outilMesure](#outilmesure)
 			* [1.2.3.12 outilDeplacerCentre](#outildeplacercentre)
 			* [1.2.3.13 outilPartagerCarte](#outilpartagercarte)
-			* [1.2.3.14 outilRapporterBogue](#outilrapporterbogue)
+			* [1.2.3.14 outilReporterBogue](#outilreporterbogue)
 			* [1.2.3.15 outilZoomEtendueMaximale](#outilzoometenduemaximale)
 			* [1.2.3.16 outilZoomPreselection](#outilzoompreselection)
 			* [1.2.3.17 outilZoomRectangle](#outilzoomrectangle)
 			* [1.2.3.18 outilEdition](#outiledition)
 			* [1.2.3.19 outilItineraire](#outilitineraire)
-			* [1.2.3.20 outilSelection](#outilSelection)
+			* [1.2.3.20 outilSelection](#outilselection)
 			* [1.2.3.21 Création d'un outil personnalisé](#creation-outil-personnalise)
 	* [4 Contexte](#contexte)
 	* [5 Liste des couches](#liste-des-couches)
-		* [5.1 Groupe de couche](#groupe-couche)
+		* [5.1 Groupe de couches](#groupe-de-couches)
 		* [5.2 Couche](#couche)
 		* [5.2.1 Blanc](#blanc)
 		* [5.2.2 Google](#google)
@@ -66,11 +65,13 @@ Fichier XML de configuration
 		* [5.2.4 OSM](#osm)
 		* [5.2.5 TMS](#tms)
 		* [5.2.6 Vecteur](#vecteur)
-		* [5.2.7 WMS](#WMS)
+		* [5.2.7 WMS](#wms)
+		* [5.2.8 ArcGIS93Rest](#arcgis93rest)
+		* [5.2.9 WFS](#wfs)
 	* [6 Actions](#actions)
 		* [6.1 Action](#action)
-	* [7 Déclencheurs](#declencheurs)
-		* [7.1 Déclencheur](#declencheur)
+	* [7 Déclencheurs](#déclencheurs)
+		* [7.1 Déclencheur](#déclencheur)
 * [8 Exemples de fichier de configuration XML](#exemples-de-fichier-de-configuration-xml)
 * [8.1 Configuration minimale (avec contexte défini dans le fichier de configuration)](#configuration-minimale-xml)
 * [8.2 Configuration minimale (avec contexte chargé à partir de la BD)](#configuration-minimale-bd)
@@ -254,13 +255,15 @@ l'échelle et la projection de la carte.
 
 |Nom		|Description		|Obligatoire	|Valeurs possibles|Valeur défaut|
 |---------------|-----------------------|---------------|-----------------|-------------|
-|id		|			|		|		|*info-panneau*|
-|titre		|			|		|		|*Informations additionnelles*|
-|position	|			|		|		|*sud*|
-|dimension	|Hauteur du panneau.	|		|		|*75*|
-|minDimension	|Hauteur minimale du panneau.|		|		|*75*|
-|maxDimension	|Hauteur maximale du panneau.|		|		|*400*|
-|ouvert		|			|		|		|*false*|
+|id		|			|Non|		|*info-panneau*|
+|titre		|			|Non|		|*Informations additionnelles*|
+|position	|			|Non|		|*sud*|
+|dimension	|Hauteur du panneau.	|Non|		|*75*|
+|minDimension	|Hauteur minimale du panneau.|Non|		|*75*|
+|maxDimension	|Hauteur maximale du panneau.|Non|		|*400*|
+|ouvert		|			|Non|		|*false*|
+|projection		|Afficher dans la liste les projections comme code EPSG ou leurs nom commun|Non|code, nom|*code*|
+|elevation		|Afficher l'altitude à une position dans la carte. (Ajout dans le config.php est nécessaire pour identifié le service api d'élévation)|Non|Booléen		|*false*|
 
 *Exemples*
 
@@ -268,7 +271,7 @@ l'échelle et la projection de la carte.
 <panneau classe="PanneauInfo">
 	<panneau id="panInfo" titre="Exemple PanneauInfo" classe="PanneauInfo"
 	position="sud" dimension="200" minDimension="100" maxDimension="300"
-	ouvert="false"/>
+	ouvert="false" projection="nom" elevation="true" />
 </panneau>
 ```
 
@@ -343,7 +346,14 @@ Permet la définition d'un panneau appelé à contenir un tableau.
 
 *Attributs ou valeurs spécifiques*
 
-Aucun
+|Nom		|Description		|Obligatoire	|Valeurs possibles|Valeur défaut|
+|---------------|-----------------------|---------------|-----------------|-------------|
+|paginer 		| Permet de paginer le tableau	| Non	    | Booléen	        | *false* |
+|paginer_debut	| Permet de commencer la pagination à une page précise	| Non		| Nombre entier		| *0*|
+|paginer_limite	| Permet de limiter le nombre d'occurence par page		| Non		| Nombre entier		| *5000*|
+|outils_selectionSeulement	| Permet d'activer l'outil d'affichage de sélection seulement	| Non		| Booléen	| *false* |
+|outils_auto   | Permet d'activer l'outil de zoom automatique sur la sélection | Non		| Booléen		| *false* |
+|outils_contenupage   | Permet d'activer l'outil de d'affichage du contenu de la page seulement | Non	| Booléen	| *false* |
 
 *Exemples*
 
@@ -360,7 +370,7 @@ Aucun
 ![](media/image7.png)
 
 
-Creation Panneau personnalise
+Creation Panneau personnalisé
 ----------------------------------
 
 *Exemple*
@@ -394,12 +404,15 @@ couches disponibles à l’affichage sur la carte.
 
 |Nom		|Description		|Obligatoire	|Valeurs possibles|Valeur défaut|
 |---------------|-----------------------|---------------|-----------------|-------------|
-|idResultatTable|Identifiant du PanneauTable ou du PanneauOnglet. Ce panneau sera utilisé pour afficher les occurences.|Non|Chaîne alphanumérique||
+|idResultatTable|Identifiant du PanneauTable ou du PanneauOnglet. Ce panneau sera utilisé pour afficher les occurences.|Non|Chaîne alphanumérique| |
+|retirerCheckboxPremNiveau| Permet de retirer les checkbox de premier niveau dans l'arborescence | non | true | false |
+|identifierSousSelection| Permet de griser les répertoires parents lorsqu'une couche est sélectionnée | non | true| false
+|identifierGetInfo| Permet d'ajout l'icône du getInfo à gauche de la couche lorsque celle-ci est cochée et qu'elle contient un getInfo | Non | true | false |
 
 *Exemple*
 
 ```xml
-<element-accordeon classe="Arborescence"/>
+ <element-accordeon classe="Arborescence" retirerCheckboxPremNiveau="true" identifierSousSelection="true" identifierGetInfo="true"/>
 ```
 
 *Aperçu*
@@ -479,18 +492,7 @@ Aucun
 <element-accordeon classe="googleStreetView"/>
 ```
 
-*Aperçu*
-
-
-Creation element de panneau accordeon personnalise
---------------------------------------------------
-
-*Exemple*
-
-*Aperçu*
-
-
-Element de localisation
+Élément de localisation
 =======================
 
 *Balise XML: `element`*
@@ -512,6 +514,8 @@ RechercheCadastreReno, RechercheGPS, RechercheHQ, RechercheLieu*.
 |maxEnreg|Nombre maximal de résultats de localisation à afficher|Non|Nombre entier supérieur à 0|*40*|
 |epingle|Indique si la case à cocher permettant la localisation d’un résultat de recherche avec une épingle dans la carte doit être affichée ou non.|Non|Booléen|*true*|
 |idResultatTable|Identifiant du PanneauTable ou du PanneauOnglet. Ce panneau sera utilisé pour afficher les résultats de la recherche.|Non|Chaîne alphanumérique||
+|couchesAssociees | Liste des couches à activer après que la recherche soit lancée | Non | Tableau | |
+
 
 RechercheAdresse
 ----------------
@@ -830,7 +834,7 @@ OutilZoomPreselection et OutilZoomRectangle*.
 |id	|Identifiant de l'outil. Est utilisé pour accéder à celui-ci. Doit être unique.|Non|Chaîne alphanumérique|*outil*|
 |classe	|Nom de la classe qui implémente l'outil.	|Non	|Les classes prédéfinies sont :  *OutilAide*, *OutilAjoutWMS*, *OutilAnalyseSpatiale*, *OutilDeplacement*, *OutilDessin*, *OutilHistoriqueNavigation*, *OutilInfo*, *OutilMesure*, *OutilDeplacerCentre*, *OutilPartagerCarte*, *OutilReporterBug*, *OutilZoomEtendueMaximale*, *OutilZoomPreselection*, *OutilZoomRectangle*  ou Classe personnalisée (voir attribut urlModule)|*Outil*|
 |urlModule|Url du fichier Javascript contenant la classe définissant un panneau personnalisé.|Seulement pour les panneaux personnalisés|URL||
-|icone|Icône de l'outil. Est affiché sur le bouton dans la barre d'outils.|Non|URL ou Classe CSS prédéfinie :  *aide*, *apropos*, *back*, *bug*, *deletefeature*, *drawpoint*, *drawline*, *drawpolygon*, *gentillyboom*, *getinfo*, *measrCircle*, *measrlinear*, *measrpolgn*, *modifyfeature*, *moveto*, *next*, *pan*, *print*, *zoomfull*, *zoomin*, *zoomout*, *zoom-hydro*, *zoom-mrc*, *zoom-mun*, *zoom-reg-adm*|titre|Titre de l'outil. Est affiché à droite du bouton dans la barre d'outils.|Non|Chaîne alphanumérique||
+|icone|Icône de l'outil. Est affiché sur le bouton dans la barre d'outils.|Non|URL ou Classe CSS prédéfinie :  *aide*, *apropos*, *back*, *bug*, *deletefeature*, *drawpoint*, *drawline*, *drawpolygon*, *getinfo*, *measrCircle*, *measrlinear*, *measrpolgn*, *modifyfeature*, *moveto*, *next*, *pan*, *print*, *zoomfull*, *zoomin*, *zoomout*, *zoom-hydro*, *zoom-mrc*, *zoom-mun*, *zoom-reg-adm*|titre|Titre de l'outil. Est affiché à droite du bouton dans la barre d'outils.|Non|Chaîne alphanumérique||
 |infobulle|Infobulle de l'outil. Est affiché lorsque le curseur de la souris est placée sur le bouton dans la barre d'outils.|Non|Chaîne alphanumérique||
 |visible|Indique si le bouton est visible ou non dans la barre d'outils lors de l'affichage initial du navigateur.|Non|Booléen|*true*|
 |actif|Indique si le bouton est actif ou non (grisé) dans la barre d'outils lors de l'affichage initial du navigateur.|Non|Booléen|*true*|
@@ -998,6 +1002,18 @@ infobulle="Dessin/Annotations" visible="true" actif="true"/>
 
 ![](media/image21.png)
 
+
+outilExportCSV
+-----------
+
+
+Permet d'exporter les données d'un panneauTable en fichier csv. Inclus dans le panneauTable.
+
+*Attributs ou valeurs spécifiques*
+
+Aucune
+
+
 outilExportGPX
 -----------
 
@@ -1067,7 +1083,7 @@ l'historique" visible="true" actif="true"/>
 ![](media/image22.png)
 
 
-outilnfo
+outilInfo
 --------
 
 Permet la définition d'un outil d'interrogation du contenu de la carte.
@@ -1227,7 +1243,7 @@ la carte" visible="true" actif="true"/>
 ![](media/image26.png)
 
 
-outilReporterBogue
+outilRapporterBogue
 ------------------
 
 Permet la définition d'un outil de soumission d'anomalie. Lorsqu'on
@@ -1246,8 +1262,8 @@ moyen disponible pour soumettre une anomalie) est affiché.
 
 *Exemple*s
 ```xml
-<outil classe="OutilReporterBogue">
-<outil id="btnRapporterAnomalie" classe="OutilReporterBogue"
+<outil classe="OutilRapporterBogue">
+<outil id="btnRapporterAnomalie" classe="OutilRapporterBogue"
 icone="images/toolbar/bug-small.png" titre="RapporterAnomalie"
 infobulle="Rapporter une anomalie" visible="true" actif="true"
 lien="http://www.google.ca"/>
@@ -1309,6 +1325,11 @@ partir d'une liste.
 |type	|Type de l'outil. Sert à déterminer le type de région à afficher dans la liste.|Oui|*region-adm / mrc / mun / hydro*||
 |icone	|					|		|			|*zoom-reg-adm (si type = region-adm)*, *zoom-mrc (si type = mrc)*, *zoom-mun (si type = mun)*, *zoom-hydro (si type = hydro)*|
 |titre	|					|		|			|*Par région administrative (si type = region-adm)*, *Par MRC (si type = mrc)*, *Par municipalité (si type = mun)*, *Par hydrographie (si type = hydro)*|
+|etiquette| attribut à utiliser pour afficher dans l'étiquette |Non| string |res_nm_reg mrs_nm_reg mus_nm_mun |
+|texteForm| Texte à afficher dans le formulaire| Non | string | |
+|fieldLabel | Titre du combobox à afficher | Non | String | |
+|requestParametre| Nom du service d'obtention des données | Non | string |
+|service | url du service | Non | String| |
 
 *Exemple*s
 ```xml
@@ -1317,6 +1338,19 @@ partir d'une liste.
 type="mun" icone="images/toolbar/zoom\_mun.png" titre="Zoom
 municipalité" infobulle="Zoom municipalité" visible="true"
 actif="true"/>
+```
+
+```xml
+<outil classe="OutilZoomPreselection" type="mrc"/>
+<outil id="btnZoomPreselection" classe="OutilZoomPreselection"
+type="mun" icone="images/toolbar/zoom\_mun.png" titre="Zoom
+municipalité" infobulle="Zoom municipalité" visible="true"
+actif="true"/>
+```
+*Personnalisé:
+```xml
+ <outil classe="OutilZoomPreselection" type="cs" id="recherche_par_cs" titre="Par centre de services" icone="zoom-mrc" etiquette="desc_fran"
+                           texteForm="un centre de services" fieldLabel="Centre de services" requestParametre="obtenirCS" service="/lien_du_service/proxy.php"/>         
 ```
 
 *Aperçu*
@@ -1478,7 +1512,8 @@ Marqueurs, OSM, TMS, Vecteur, WMS*.
 |ordreAffichage| Ordre d'affichage de la couche		| Non		| Nombre entier		| *Valeurs par défaut d’OpenLayers*|
 |droit	| Indique les droits de la couche (Copyrights)	| Non		| Chaîne alphanumérique	| 		|
 |metadonnee| Lien vers les métadonnées			| Non		| URL			|		|
-|ordreArborescence| Ordre d'affichage de la couche dans le groupe de l'arborescence (1 étant le haut du groupe)| Non| Nombre entier||
+|ordreArborescence| Ordre d'affichage de la couche dans le groupe de l'arborescence (1 étant le haut du groupe)| Non| Nombre entier|
+|estInterrogeable|Indique si le getInfo doit être fait sur cette couche | Non | Booléen | true |
 
 blanc
 -----
@@ -1581,6 +1616,7 @@ Permet la définition d'une couche provenant d’un service de carte tuilé
 |url	|URL du service de carte tuilé		      	|Oui	    	|URL 		    	|  		|
 |nom	|Nom de la couche                             	|Oui	    	|Chaîne alphanumérique  |		|
 |titre	|           Titre de la couche			|Oui		|Chaîne alphanumérique	|		|
+|format	|Format des image (png,jpg)	 			|Non		|Chaîne alphanumérique	|png		|
 |impressionUrl|   URL du service à utiliser pour l’impression|   Non	|URL			|		|
 |impressionNom|   Nom de la couche pour l’impression	|           Non	|Chaîne alphanumérique	|		|
 
@@ -1596,6 +1632,7 @@ nom="carte\_gouv\_qc\_ro@EPSG\_3857" titre="Gouvernement du Québec"
 protocole="TMS" fond="true" echelleMin="6000000" echelleMax="1"
 groupe="Test" visible="true" active="faux" opacite="100"
 ordreAffichage="1"
+format="jpg"
 impressionUrl="http://spssogl97d.sso.msp.gouv.qc.ca/cgi-wms/carte\_gouv\_qc.fcgi?"
 impressionNom="CARTE\_GOUV\_QC"/>
 ```
@@ -1644,7 +1681,8 @@ Permet la définition d'une couche provenant d’un service de carte (WMS).
 |infoEncodage | Indique l'encodage voulu dans la fenêtre de résultats pour l' *OutilInfo* sur la couche | Non| Chaîne alphanumérique| *UTF-8*|
 |infoGabarit | Indique l'emplacement du script [Handlebars](https://github.com/wycats/handlebars.js#differences-between-handlebarsjs-and-mustache) avec l'extension *.html* qui sera apliqué dans la fenêtre de résultats sur l' *OutilInfo* après le clique sur la couche dans la carte ([exemple](https://github.com/bosthy/igo/blob/dev/interfaces/navigateur/public/template/handlebars.exemple.html),[ exemple simple](https://github.com/bosthy/igo/blob/dev/interfaces/navigateur/public/template/handlebars.exempleSimple.html)) | Non|  URL|
 |infoUrl | Indique un url qui sera remplacer par l'url GetFeaturInfo de l' *OutilInfo* | Non| URL| |
-|infoAction | Indique l'emplacement du script qui reçevra le résultats json du GetFeatureInfo de l' *OutilInfo* après le clique sur la couche dans la carte l'affichage sera géré par le script| Non| URL|		|
+|infoAction | Indique l'emplacement du script qui reçevra le résultats json du GetFeatureInfo de l' *OutilInfo* après le clique sur la couche dans la carte l'affichage sera géré par le script| Non| URL| |
+|afficherMessageErreurUtilisateur| Permettre d'afficher un message générique à l'utilisateur quand la couche est en erreur. | Non | "True" | |
 
 *Exemples*
 ```xml
@@ -1670,6 +1708,43 @@ Permet la définition d'une couche provenant d’un service de carte (WMS).
    visible="true" active="faux" opacite="100" ordreAffichage="1"/>
 ```
 
+ArcGIS93Rest
+---
+
+Permet la définition d'une couche provenant d’un service rest de ArcGIS.
+
+*Attributs ou valeurs spécifiques*
+
+| Nom   | Description                                 	| Obligatoire 	| Valeurs possibles    	| Valeur défaut	|
+|-------|-----------------------------------------------|---------------|-----------------------|---------------|
+|url	|URL du service      	                	|Oui	    	|URL 		    	|  		|
+|nom	|Nom de la couche                             	|Oui	    	|Chaîne alphanumérique  |		|
+|titre	|           Titre de la couche			|Oui		|Chaîne alphanumérique	|		|
+
+*Exemples*
+```xml
+<couche titre="ArcGis93Rest" protocole="ArcGIS93Rest" url="http://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Specialty/ESRI_StateCityHighway_USA/MapServer/export" nom="0,1,2" />  
+```
+
+WFS
+---
+
+Permet la définition d'une couche provenant d’un service WFS.
+
+*Attributs ou valeurs spécifiques*
+
+| Nom   | Description                                 	| Obligatoire 	| Valeurs possibles    	| Valeur défaut	|
+|-------|-----------------------------------------------|---------------|-----------------------|---------------|
+|url	|URL du service      	                	|Oui	    	|URL 		    	|  		|
+|nom	|Nom de la couche                             	|Oui	    	|Chaîne alphanumérique  |		|
+|garderHistorique	|           Permet un historique des événements sur la couche			|Non		|Chaîne alphanumérique	|		|
+|projection	|           Projection de la couche			|Non		|Chaîne alphanumérique	|Projection de la carte		|
+
+
+*Exemples*
+```xml
+<couche titre="exemple WFS" protocole="WFS" url="http://geoegl.msp.gouv.qc.ca/cgi-wms/dpop.fcgi?" nom="dpop_criminalite_generale_v_s" />  
+```
 
 Actions
 =======

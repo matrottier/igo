@@ -77,12 +77,46 @@ define(['evenement', 'aide'], function(Evenement, Aide) {
             };
         }
 
+        var attribution;
+        if(typeof opt.droit === 'string'){
+            attribution = opt.droit.trim();
+        } else if(opt.droitTitre || opt.droitLogo){
+            var attribution = '<span>';
+
+            if(opt.droitLien){
+                attribution += '<a target="_blank" href="'+opt.droitLien+'">';
+            } 
+            if(opt.droitLogo){    
+                attribution += '<img width="'+opt.droitLogoLargeur+'" height="'+opt.droitLogoHauteur+'" src="'+opt.droitLogo+'">';
+            }
+
+            if(opt.droitLien){
+                attribution += '</a>&nbsp;<a target="_blank" href="'+opt.droitLien+'">';
+            } 
+            
+            attribution += opt.droitTitre;
+
+            if(opt.droitLien){
+                attribution += '</a>';
+            } 
+
+            attribution += '</span>';                           
+        }
+
+        var layerActif = Aide.obtenirParametreURL("layeractif");
+        if(layerActif){
+            layerActif = layerActif.split(',');
+            if(layerActif.indexOf(opt.nom) !== -1 || layerActif.indexOf(opt.groupe) !== -1){
+                opt.active = true;
+            }
+        }
+
         this._optionsOL = $.extend({ 
             isBaseLayer: Aide.toBoolean(opt.fond),
             minScale: opt.echelleMin, //todo: defaultMapOptions.resolutions[11] || this.carte.getResolutionForZoom(opt.niveauZoomMin), //echelleMin: grand nombre
             maxScale: opt.echelleMax, //|| this.carte.getResolutionForZoom(opt.niveauZoomMax), //echelleMax: petit nombre
             group: opt.groupe,
-            attribution: opt.droit,
+            attribution: attribution,
             typeContexte: opt.typeContexte,
             displayInLayerSwitcher: Aide.toBoolean(opt.visible),
             legende: Aide.toBoolean(opt.legende),
@@ -91,7 +125,6 @@ define(['evenement', 'aide'], function(Evenement, Aide) {
             zTree: opt.ordreArborescence,
             printOptions: printOptions
         }, this._optionsOL, this.options._optionsOL);
-       
     };
     
     
@@ -126,8 +159,9 @@ define(['evenement', 'aide'], function(Evenement, Aide) {
         this._getLayer().id = this.id;
         if (typeof callback === "function") callback.call(target, this, optCallback);
         
-        this._getLayer().events.register('loadstart',this,function(e){this.afficherChargement()});
-        this._getLayer().events.register('loadend',this,function(e){this.masquerChargement()});
+        this._getLayer().events.register('loadstart', this, function(e){this.gererStyleParentEnfantSelect();this.gererIndentifierAGetInfo();this.afficherChargement();});
+        this._getLayer().events.register('loadend', this, function(e){this.masquerChargement();});
+        this._getLayer().events.register('visibilitychanged', this, function(e){this.gererStyleParentEnfantSelect();this.gererIndentifierAGetInfo();this._visibiliteChangee();});
     };
     
     /** 
@@ -166,6 +200,17 @@ define(['evenement', 'aide'], function(Evenement, Aide) {
     Couche.prototype.obtenirGroupe = function() { 
         return this.options.groupe;
     };
+
+    /** 
+    * Obtenir le nom de la couche
+    * @method 
+    * @name Couche#obtenirNom
+    * @returns {String} Nom de la couche
+    */
+    Couche.prototype.obtenirNom = function() { 
+        return this.options.nom;
+    };
+
 
     /** 
     * Obtenir l'identifiant de la couche
@@ -225,6 +270,17 @@ define(['evenement', 'aide'], function(Evenement, Aide) {
         return this._getLayer().getVisibility();
     };
     
+     /** 
+    * Vérifie si la couche peu être affichée selon le minimum
+    * et maximum de résolution
+    * @method 
+    * @name Couche#estDansPortee
+    * @returns {Boolean}
+    */
+    Couche.prototype.estDansPortee = function() { 
+        return this._getLayer().inRange;
+    };
+    
     /** 
     * Activer la couche
     * @method 
@@ -240,6 +296,8 @@ define(['evenement', 'aide'], function(Evenement, Aide) {
         }
             
         this._getLayer().setVisibility(true);
+        this.gererStyleParentEnfantSelect();
+        this.gererIndentifierAGetInfo();
     };
     
     /** 
@@ -256,11 +314,30 @@ define(['evenement', 'aide'], function(Evenement, Aide) {
            return;
         }
         this._getLayer().setVisibility(false);
+        this.gererStyleParentEnfantSelect();
+        this.gererIndentifierAGetInfo();
     };
     
     
+    /** 
+    * Définir la transparence de la couche 
+    * @method 
+    * @name Couche#definirOpacite
+    * @param {Nombre} opacite nombre entre 0 et 1
+    */
     Couche.prototype.definirOpacite = function(opacite) { 
         this._getLayer().setOpacity(opacite);
+    };
+    
+    
+    /** 
+    * Obtenir la transparence de la couche
+    * @method 
+    * @name Couche#obtenirOpacite
+    * @returns {Nombre} transparence entre 0 et 1
+    */    
+    Couche.prototype.obtenirOpacite = function() { 
+        return this._getLayer().opacity;
     };
     
      
@@ -378,6 +455,68 @@ define(['evenement', 'aide'], function(Evenement, Aide) {
         if(div){
             $(div).find(".layerArboLoading").hide();
         }
+    };
+
+    Couche.prototype._visibiliteChangee = function(){
+        this.declencher({
+            type: this.estActive() ? "activee": "desactivee"
+        }); 
+    }
+    
+    /**
+     * Aficher/Masquer un style gris sur le style parent pour indiquer que des couches enfants sont sélectionnées.
+     * @method
+     * @name Couche#gererStyleParentEnfantSelect
+     */
+    Couche.prototype.gererStyleParentEnfantSelect = function()
+    {
+        
+        var panneauArborescence = Aide.obtenirNavigateur().obtenirPanneauxParType("Arborescence",3)[0];
+        
+        if(panneauArborescence === undefined || panneauArborescence.options.identifierSousSelection !== "true")
+            return false;            
+        
+        var idPanneauArbo =panneauArborescence.obtenirId();
+        $("#"+idPanneauArbo).find("input:checked").parents("ul").prev().css('background-color', 'rgb(211, 211, 211)');
+       
+        $("#"+idPanneauArbo).find("div").each(
+            function(index,elem){
+                if($(elem).css('background-color') == 'rgb(211, 211, 211)')
+                {
+                    if($(elem).next().find("input:checked").length == 0)
+                    $(elem).css('background-color', '');
+                }
+            }
+        );
+    };   
+    
+    /**
+     * Obtenir la valeur à savoir si la couche a un getInfo
+     * @method
+     * @name #Couche#gererIndentifierAGetInfo
+     */
+    Couche.prototype.gererIndentifierAGetInfo = function() {
+        
+         var panneauArborescence = Aide.obtenirNavigateur().obtenirPanneauxParType("Arborescence",3)[0];
+        
+        if(panneauArborescence === undefined || panneauArborescence.options.identifierGetInfo !== "true")
+            return false;            
+        
+        
+        if(this.options.aGetInfo && (this.options.aGetInfo === true  || this.options.aGetInfo == "true")) {
+            var div = this.obtenirElementDivArbo();
+        
+            var $layerArboGetInfo = $(div).find(".layerArboGetInfo");
+            if($layerArboGetInfo.length){
+                if($(div).find("input:checked").length == 1)
+                    $layerArboGetInfo.show();
+                else
+                    $layerArboGetInfo.hide();
+          
+          } else if(div){
+              $(div).find(".x-tree-node-indent").before('<img class="layerArboGetInfo" style="position: absolute;height: 15px;padding-top: 2px;padding-left: 15px" src="'+ Aide.utiliserBaseUri("images/toolbar/info.png")+'" alt="Cette couche à un getInfo">');
+          }         
+      }
     };
     
     return Couche;

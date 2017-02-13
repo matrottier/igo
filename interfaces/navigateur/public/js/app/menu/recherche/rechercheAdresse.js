@@ -84,9 +84,20 @@ define(['recherche', 'aide', 'point', 'style', 'limites'], function(Recherche, A
             ]
         });
 
-       var styles = {defaut: {visible: false}, select: style};
+        var survolStyle = style.cloner();
+        survolStyle.definirPropriete('opacite', 0.8);
 
-        var vecteur = this.creerVecteurRecherche(styles);
+        var styles = {defaut: {visible: false}, select: style, survol: survolStyle};
+        if(this.options.idResultatTable){
+            styles.defaut = style;
+        }
+
+        var vecteur = this.creerVecteurRecherche(styles, this.ajouterOccurences, {responseJSON: responseJSON});
+    };
+   
+    RechercheAdresse.prototype.ajouterOccurences = function(e) {
+        var vecteur = e.target;
+        var responseJSON = e.options.params.responseJSON;
         $.each(responseJSON.geocoderReponseListe, function(key, value) {
             var point;
             if (!value.localisation) {
@@ -132,13 +143,19 @@ define(['recherche', 'aide', 'point', 'style', 'limites'], function(Recherche, A
         resultat += "<h4><u>Résultats (" + debut + " - " + fin + ")</u></h4>";
         $.each(vecteur.listeOccurences, function(row, occurence) {
             var title = occurence.proprietes.statut.description || '';
+            var couleur = 'blue';
+            
             if(occurence.proprietes.statut.commentaire){
                 title += '\nCommentaire: ' + occurence.proprietes.statut.commentaire;
+                couleur = 'DarkOrange';
             }
-            var couleur = 'blue';
+            
             if(occurence.proprietes.statut.etat && occurence.proprietes.statut.etat !== 'Officiel'){
                 couleur = '#ff7200';
             }
+            
+            title = title.replace(/'/g, "&#39;");
+            
             resultat += "<li data-id='" + occurence.id + 
                     "' class='rechercheResultatsListe'><font color='"+couleur+"' title='"+title+"'><b>» </b><u>" + 
                     occurence.obtenirPropriete("adresseLibre")+"</u></font></li>";

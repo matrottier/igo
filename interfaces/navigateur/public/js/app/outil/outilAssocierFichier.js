@@ -20,6 +20,7 @@ define(['aide', 'outil', 'fileUploadField'], function(Aide, Outil) {
         this.contexteParentAssocierFichier = this.options.associerFichier;
         this.contexteParentVisualiserFichier = this.options.visualiserFichier;
         this.contexteParentListerFichiers = this.options.listerFichiers;
+        this.contexteParentMettreAjourCompteur = this.options.mettreAjourCompteur;
         this.defautOptions.titre = "Associer des fichiers";
         this.defautOptions.champs || [{name:'id'}, {name:'nom_phys_docu'}, {name:'timb_maj'}];
         this.defautOptions.executer = this.afficherFenetre;
@@ -68,10 +69,10 @@ define(['aide', 'outil', 'fileUploadField'], function(Aide, Outil) {
             html: "<div style=\"position:absolute;top:115px;left:25px;\" id=\"uploadForm\"></div>"
         });
 
-        var buttonVisualiser = new Ext.Button({
+        var buttonTelecharger = new Ext.Button({
             width: 80,
             cls: "fileButton",
-            text: "Visualiser",
+            text: "Télécharger",
             listeners : {
                 click : function(){
                     
@@ -113,6 +114,7 @@ define(['aide', 'outil', 'fileUploadField'], function(Aide, Outil) {
             listeners : {
                 click : function(){
                      that.fenetreAssocFichier.hide();
+                     that.contexteParentMettreAjourCompteur(that.obtenirNombreFichier());
                 }
             }
         });        
@@ -121,11 +123,11 @@ define(['aide', 'outil', 'fileUploadField'], function(Aide, Outil) {
             style: "position: relative; float:right",
             cls: "uploadForm",
             width: 80,
-            items: [buttonVisualiser,
+            items: [buttonTelecharger,
                 {
                     xtype :'fileuploadfield',
                     inputType :'file',
-                    id: 'uploadDocument',
+                    id: 'uploadOutilAssocierFichier',
                     buttonOnly : true,
                     buttonText: "&nbsp; &nbsp; &nbsp; Ajouter&nbsp; &nbsp; &nbsp;&nbsp;", //width 80?
                     cls: "fileButton",
@@ -149,6 +151,9 @@ define(['aide', 'outil', 'fileUploadField'], function(Aide, Outil) {
                             else{
                                 Aide.afficherMessage("Message", "S.V.P. Sélectionner un fichier.", "OK", "MESSAGE"); 
                             }
+                            
+                            //Permet de réinialiser le panneau afin de permettre la resélection du même fichier.
+                            this.reset();
                         }
                     }
                 },
@@ -195,12 +200,18 @@ define(['aide', 'outil', 'fileUploadField'], function(Aide, Outil) {
     
     OutilAssocierFichier.prototype.listerFichiers = function(){
        
-        this.contexteParentListerFichiers(this.callBackListerFichiers.bind(this));
+        this.contexteParentListerFichiers(this.callBackListerFichiersSucess.bind(this), this.callBackListerFichiersErreur.bind(this));
     };
     
-    OutilAssocierFichier.prototype.callBackListerFichiers = function(data){
+    OutilAssocierFichier.prototype.callBackListerFichiersSucess = function(data){
        
        this.gridAssocierFichier.getStore().loadData(data);
+        
+    };
+    
+    OutilAssocierFichier.prototype.callBackListerFichiersErreur = function(data){
+       
+        console.log("Impossible de lister les fichiers");
         
     };
     
@@ -218,6 +229,10 @@ define(['aide', 'outil', 'fileUploadField'], function(Aide, Outil) {
                  
         this.contexteParentVisualiserFichier(fichier);
     };    
+    
+    OutilAssocierFichier.prototype.obtenirNombreFichier = function(){
+        return this.gridAssocierFichier.getStore().getTotalCount();
+    };
        
     return OutilAssocierFichier;
     
